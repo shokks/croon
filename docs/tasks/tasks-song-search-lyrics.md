@@ -8,25 +8,29 @@
 
 ## Relevant Files
 
-- `types/index.ts` - Add `SongSearchResult`, `LyricsLookupResult`, `SyncedLyricLine`; add `syncedLyrics?: string | null` to `Song`
-- `lib/storage.ts` - Update `normalizeSongs` and `saveSong` to persist `syncedLyrics`
+- `types/index.ts` - Added `SongSearchResult`, `LyricsLookupResult`, `SyncedLyricLine`; added `syncedLyrics?: string | null` and `artworkUrl?: string` to `Song`
+- `lib/storage.ts` - Updated `normalizeSongs` to persist `syncedLyrics` and `artworkUrl`
 - `lib/useSongSearch.ts` - New: debounced iTunes search hook
 - `lib/useLyricsLookup.ts` - New: LRCLIB get-cached + search fallback
 - `lib/lyricsSync.ts` - New: `parseSyncedLyrics()` LRC parser
-- `app/song/search.tsx` - New: search screen
-- `app/song/new.tsx` - Read incoming prefill params and forward to `SongEditorScreen`
-- `app/index.tsx` - Change `+` navigation target from `/song/new` to `/song/search`
-- `app/_layout.tsx` - Register `song/search` route in Stack
-- `components/SongEditorScreen.tsx` - Accept prefill props; show LRCLIB helper text
-- `components/LyricsScrollView.tsx` - Add optional `syncedLines`/`currentMs` props; derive active index from timestamps when present; reuse all existing per-line layout, smooth-scroll, and highlight infrastructure
-- `components/RecordingScreen.tsx` - Detect `syncedLyrics` on load; switch scroll mode
+- `app/song/search.tsx` - New: search screen; uses `router.replace` for navigation; passes `prefillArtworkUrl`
+- `app/song/new.tsx` - Reads and forwards all prefill params including `prefillArtworkUrl`
+- `app/index.tsx` - FAB navigates to `/song/search`; hairline separators added to list
+- `app/_layout.tsx` - Registered `song/search` route
+- `components/SongEditorScreen.tsx` - Accepts all prefill props; eager save on mount; persists `artworkUrl` and `syncedLyrics`
+- `components/LyricsScrollView.tsx` - Added `syncedLines`/`currentMs` props; timestamp-driven active index in synced mode; `syncedInactiveLine` style (0.4 opacity)
+- `components/RecordingScreen.tsx` - Loads and parses `syncedLyrics`; passes `syncedLines`/`currentMs` to `LyricsScrollView`
+- `components/SongListItem.tsx` - Redesigned: no-card layout, 56×56 artwork thumbnail with warm tint, placeholder for manual songs, amber dot for recorded songs, hairline separators
 
 ### Notes
 
 - No automated tests — validate manually on device.
-- All new network calls must use `AbortController` for in-flight cancellation on unmount.
-- `expo-localization` is included in the Expo SDK 54 and can be imported directly — no separate install needed. Verify with a quick import test.
-- `syncedLyrics` lives on `Song` (top-level), not on `SongRecording` — lyrics belong to the song, not a specific take.
+- All new network calls use `AbortController` for in-flight cancellation on unmount.
+- `expo-localization` was not pre-installed; added via `npx expo install expo-localization`.
+- `syncedLyrics` and `artworkUrl` live on `Song` (top-level), not on `SongRecording`.
+- iTunes `artworkUrl100` is upscaled to `300x300bb` before storing.
+- Navigation from search uses `router.replace` — back from editor goes to Library, not search.
+- Prefilled songs are saved eagerly on editor mount to fix race condition with library reload.
 
 ---
 
@@ -84,7 +88,7 @@ Each parent task lifecycle: branch → implement → verify on device → user a
     };
     ```
   - [x] 1.4 Verify: run `npx tsc --noEmit` — zero type errors (~5 min)
-  - [ ] 1.5 Get user approval
+  - [x] 1.5 Get user approval
 
 ---
 
@@ -204,7 +208,7 @@ Each parent task lifecycle: branch → implement → verify on device → user a
 
 ---
 
-- [ ] 5.0 Build synced-line highlight in the recording screen
+- [x] 5.0 Build synced-line highlight in the recording screen
   > **Context:** `LyricsScrollView` already renders each line individually, tracks per-line Y offsets in `lineOffsetsRef`, smooth-scrolls to keep the active line centred, and dims past/future lines. The only work needed is (a) externalising the index source and (b) switching to uniform 0.4 opacity for non-active lines in synced mode. Do NOT rebuild the rendering pipeline.
 
   - [x] 5.1 In `LyricsScrollView.tsx`, add two optional props (~5 min):
@@ -234,25 +238,55 @@ Each parent task lifecycle: branch → implement → verify on device → user a
       currentMs={syncedLines.length > 0 ? elapsedSeconds * 1000 : undefined}
     />
     ```
-  - [ ] 5.8 Verify on device: search and select a song that returns synced lyrics (try "Chand Sifarish" by Shaan) → record → confirm active line advances as time elapses and all other lines are at 0.4 opacity; also verify a manual song (no synced lyrics) still auto-scrolls with past/future dimming unchanged (~20 min)
-  - [ ] 5.9 Get user approval
+  - [x] 5.8 Verify on device: search and select a song that returns synced lyrics (try "Chand Sifarish" by Shaan) → record → confirm active line advances as time elapses and all other lines are at 0.4 opacity; also verify a manual song (no synced lyrics) still auto-scrolls with past/future dimming unchanged (~20 min)
+  - [x] 5.9 Get user approval
+
+---
+
+---
+
+- [x] 7.0 Album artwork — fetch, store, and display
+  - [x] 7.1 Add `artworkUrl?: string` to `Song` type in `types/index.ts`
+  - [x] 7.2 Update `normalizeSongs` in `lib/storage.ts` to persist `artworkUrl`
+  - [x] 7.3 In `app/song/search.tsx`, pass `prefillArtworkUrl` param when navigating — upscale URL from `100x100bb` to `300x300bb` via string replace
+  - [x] 7.4 Update `app/song/new.tsx` to read and forward `prefillArtworkUrl`
+  - [x] 7.5 Update `SongEditorScreen` props to accept `prefillArtworkUrl`; store in `artworkUrlRef`; include in every `saveSong` call; restore from `song.artworkUrl` on existing song load
+  - [x] 7.6 Get user approval (covered by library redesign approval)
+
+---
+
+- [x] 8.0 Library redesign — artwork thumbnail, no-card layout
+  - [x] 8.1 Rewrite `components/SongListItem.tsx`:
+    - Remove card background (`backgroundColor: Palette.surface`) — rows sit on bare background
+    - Add 56×56 artwork thumbnail (borderRadius 8) on the left with warm tint overlay (`rgba(14,12,10,0.22)`)
+    - Add `surfaceRaised` placeholder with dim music-note icon for songs without artwork
+    - Replace 3px left accent bar with a 5×5 amber dot in the bottom-right corner of the thumbnail for recorded songs
+    - Recording duration shown inline in accent colour (no separate badge)
+  - [x] 8.2 In `app/index.tsx`, add `ItemSeparatorComponent` with hairline border inset-left to align with text column; update padding from 16 to 20
+  - [x] 8.3 Get user approval
+
+---
+
+- [x] 9.0 Navigation fix — search screen removed from back stack
+  - [x] 9.1 Change `router.push` → `router.replace` for track selection navigation in `app/song/search.tsx`
+  - [x] 9.2 Change `router.push` → `router.replace` for "Skip / enter manually" link
+  - [x] 9.3 Result: back from editor goes to Library, not back to empty search screen
+
+---
+
+- [x] 10.0 Eager save fix — library shows new song immediately on back
+  - [x] 10.1 In `SongEditorScreen` prefill `useEffect`, set `createdAtRef.current` and call `void doSave()` immediately when prefill data is present — eliminates race condition between `useFocusEffect` cleanup save and library `loadSongs` on focus
 
 ---
 
 - [ ] 6.0 E2E validation, merge, and roadmap update
-  - [ ] 6.1 Full happy path on device (~20 min):
+  - [x] 6.1 Full happy path on device (~20 min):
     - Open app → tap + → search "Chand Sifarish" → select track → lyrics auto-fill → helper text visible → tap Start Recording → synced lines highlight as time advances → stop → play back → done
-  - [ ] 6.2 Fallback path — no lyrics (~10 min):
+  - [x] 6.2 Fallback path — no lyrics (~10 min):
     - Search a song likely not in LRCLIB (e.g. an obscure track) → select it → editor opens with name pre-filled, lyrics empty, no helper text → enter lyrics manually → record normally
-  - [ ] 6.3 Skip path (~5 min):
+  - [x] 6.3 Skip path (~5 min):
     - Tap + → tap "Skip / enter manually" → blank editor opens → full flow works as before
   - [ ] 6.4 Run `npm run lint` and `npx tsc --noEmit` — zero errors (~5 min)
-  - [ ] 6.5 Commit, merge to main, delete branch (~10 min):
-    ```
-    git add -A
-    git commit -m "Add song search + auto-lyrics (iTunes + LRCLIB + synced line highlight)"
-    git checkout main && git merge --no-ff feature/8-song-search-lyrics
-    git branch -d feature/8-song-search-lyrics
-    ```
+  - [ ] 6.5 Commit, merge to main, delete branch (~10 min)
   - [ ] 6.6 Update `docs/roadmap.md` — mark Song Search + Auto-Lyrics as ✅ Complete with today's date (~5 min)
   - [ ] 6.7 Get user approval

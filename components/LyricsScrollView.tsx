@@ -115,9 +115,7 @@ export function LyricsScrollView({ lyrics, scrollSpeed, syncedLines, currentMs }
     if (!lineData) return;
     const targetY = Math.max(0, lineData.y - viewportHeightRef.current / 2 + lineData.height / 2);
     smoothScrollTo(targetY);
-  // smoothScrollTo is stable (uses only refs), safe to omit from deps
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentLineIndex]);
+  }, [currentLineIndex]); // smoothScrollTo uses only refs — stable, safe to omit
 
   const handleLayout = (event: { nativeEvent: { layout: { height: number } } }) => {
     viewportHeightRef.current = event.nativeEvent.layout.height;

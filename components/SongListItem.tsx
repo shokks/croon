@@ -106,25 +106,33 @@ const ARTWORK_SIZE = 56;
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingRight: 4,
+    marginBottom: 10,
   },
   row: {
     alignItems: 'center',
+    backgroundColor: withOpacity(Palette.surfaceRaised, 0.62),
+    borderColor: withOpacity(Palette.border, 0.65),
+    borderRadius: 16,
+    borderWidth: 1,
+    elevation: 3,
     flex: 1,
     flexDirection: 'row',
     gap: 14,
+    paddingHorizontal: 12,
     paddingVertical: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 14,
   },
   rowPressed: {
-    opacity: 0.65,
+    opacity: 0.82,
+    transform: [{ scale: 0.99 }],
   },
 
   // Artwork
   artworkWrap: {
-    borderRadius: 8,
+    borderRadius: 12,
     flexShrink: 0,
     height: ARTWORK_SIZE,
     overflow: 'hidden',
@@ -191,7 +199,9 @@ const styles = StyleSheet.create({
   },
 
   deleteButton: {
+    alignSelf: 'flex-end',
     borderRadius: 20,
-    padding: 10,
+    marginTop: 2,
+    padding: 8,
   },
 });

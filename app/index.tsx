@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
-import { type Href, Stack, useRouter } from 'expo-router';
+import { type Href, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, FlatList, ImageBackground, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -88,6 +88,7 @@ export default function LibraryScreen() {
   );
 
   const fabBottom = Math.max(insets.bottom + 16, 32);
+  const heroSong = songs[0];
 
   return (
     <View style={styles.container}>
@@ -98,6 +99,28 @@ export default function LibraryScreen() {
         ]}
         data={songs}
         keyExtractor={(item) => item.id}
+        ListHeaderComponent={
+          heroSong ? (
+            <Pressable onPress={() => handleOpenSong(heroSong.id)} style={styles.heroCard}>
+              <ImageBackground
+                imageStyle={styles.heroImage}
+                source={{ uri: heroSong.artworkUrl }}
+                style={styles.heroArtwork}>
+                <View style={styles.heroOverlay}>
+                  <Text numberOfLines={1} style={styles.heroEyebrow}>
+                    Featured
+                  </Text>
+                  <Text numberOfLines={1} style={styles.heroTitle}>
+                    {heroSong.name || 'Untitled song'}
+                  </Text>
+                  <Text numberOfLines={1} style={styles.heroMeta}>
+                    Tap to open
+                  </Text>
+                </View>
+              </ImageBackground>
+            </Pressable>
+          ) : null
+        }
         ListEmptyComponent={
           isLoading ? null : (
             <View style={styles.emptyContent}>
@@ -138,7 +161,44 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 20,
-    paddingTop: 8,
+    paddingTop: 14,
+  },
+  heroCard: {
+    borderRadius: 18,
+    marginBottom: 18,
+    overflow: 'hidden',
+  },
+  heroArtwork: {
+    height: 190,
+    justifyContent: 'flex-end',
+    width: '100%',
+  },
+  heroImage: {
+    borderRadius: 18,
+  },
+  heroOverlay: {
+    backgroundColor: 'rgba(0,0,0,0.32)',
+    gap: 2,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  heroEyebrow: {
+    color: '#D7CFF2',
+    fontFamily: 'DM-Sans-SemiBold',
+    fontSize: 12,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  heroTitle: {
+    color: Palette.textPrimary,
+    fontFamily: 'DM-Sans-SemiBold',
+    fontSize: 20,
+    lineHeight: 26,
+  },
+  heroMeta: {
+    color: '#D0CED7',
+    fontFamily: 'DM-Sans',
+    fontSize: 13,
   },
   separator: {
     backgroundColor: Palette.border,

@@ -136,6 +136,7 @@ export function SongEditorScreen({
     return () => {
       mounted = false;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- prefill props are stable after mount; doSave is a stable callback
   }, [songId]);
 
   // Keyboard mode transitions
