@@ -61,16 +61,16 @@ Each parent task follows this lifecycle:
   - [x] 1.8 Get user approval
   - [x] 1.9 Commit changes, merge `feature/1-project-setup` to `main`, delete branch (~10 min)
 
-- [ ] 2.0 Build local song library (storage layer + library screen)
-  - [ ] 2.1 Create and checkout branch: `git checkout -b feature/2-song-library` (~5 min)
-  - [ ] 2.2 Create `lib/storage.ts` with AsyncStorage helpers: `getSongs()`, `saveSong(song)`, `deleteSong(id)` — songs stored as a JSON array under a single key (~30 min)
-  - [ ] 2.3 Create `components/SongListItem.tsx` — shows song name + created date, with a delete icon button (~30 min)
-  - [ ] 2.4 Build `app/index.tsx` as the library screen: fetch songs on mount, render a `FlatList` of `SongListItem`, show an empty-state message ("No songs yet — tap + to start") when list is empty (~45 min)
-  - [ ] 2.5 Add a prominent "+" button in the header that navigates to `/song/new` (~15 min)
-  - [ ] 2.6 Wire delete: call `deleteSong(id)` then refresh the list (~15 min)
-  - [ ] 2.7 Verify: manually seed a song in storage — confirm it appears in the list; delete it — confirm it disappears; confirm empty state shows on a fresh install (~15 min)
-  - [ ] 2.8 Get user approval
-  - [ ] 2.9 Commit changes, merge `feature/2-song-library` to `main`, delete branch (~10 min)
+- [x] 2.0 Build local song library (storage layer + library screen)
+  - [x] 2.1 Create and checkout branch: `git checkout -b feature/2-song-library` (~5 min)
+  - [x] 2.2 Create `lib/storage.ts` with AsyncStorage helpers: `getSongs()`, `saveSong(song)`, `deleteSong(id)` — songs stored as a JSON array under a single key (~30 min)
+  - [x] 2.3 Create `components/SongListItem.tsx` — shows song name + created date, with a delete icon button (~30 min)
+  - [x] 2.4 Build `app/index.tsx` as the library screen: fetch songs on mount, render a `FlatList` of `SongListItem`, show an empty-state message ("No songs yet — tap + to start") when list is empty (~45 min)
+  - [x] 2.5 Add a prominent "+" button in the header that navigates to `/song/new` (~15 min)
+  - [x] 2.6 Wire delete: call `deleteSong(id)` then refresh the list (~15 min)
+  - [x] 2.7 Verify: manually seed a song in storage — confirm it appears in the list; delete it — confirm it disappears; confirm empty state shows on a fresh install (~15 min)
+  - [x] 2.8 Get user approval
+  - [x] 2.9 Commit changes, merge `feature/2-song-library` to `main`, delete branch (~10 min)
 
 - [ ] 3.0 Build Song Screen UI (lyrics editor + scroll speed + save)
   - [ ] 3.1 Create and checkout branch: `git checkout -b feature/3-song-screen-ui` (~5 min)
