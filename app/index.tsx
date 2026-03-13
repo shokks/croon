@@ -31,6 +31,13 @@ export default function LibraryScreen() {
     await loadSongs();
   }, [loadSongs]);
 
+  const handleOpenSong = useCallback(
+    (id: string) => {
+      router.push(`/song/${id}` as Href);
+    },
+    [router]
+  );
+
   return (
     <View style={styles.container}>
       <Stack.Screen
@@ -56,7 +63,9 @@ export default function LibraryScreen() {
             {isLoading ? 'Loading songs...' : 'No songs yet — tap + to start'}
           </ThemedText>
         }
-        renderItem={({ item }) => <SongListItem onDelete={handleDeleteSong} song={item} />}
+        renderItem={({ item }) => (
+          <SongListItem onDelete={handleDeleteSong} onPress={handleOpenSong} song={item} />
+        )}
       />
     </View>
   );

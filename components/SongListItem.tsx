@@ -7,6 +7,7 @@ import type { Song } from '@/types';
 type SongListItemProps = {
   song: Song;
   onDelete: (id: string) => void;
+  onPress: (id: string) => void;
 };
 
 function formatCreatedDate(createdAt: string): string {
@@ -19,15 +20,15 @@ function formatCreatedDate(createdAt: string): string {
   return timestamp.toLocaleDateString();
 }
 
-export function SongListItem({ song, onDelete }: SongListItemProps) {
+export function SongListItem({ song, onDelete, onPress }: SongListItemProps) {
   return (
     <View style={styles.container}>
-      <View style={styles.content}>
-        <ThemedText type="defaultSemiBold" numberOfLines={1}>
+      <Pressable onPress={() => onPress(song.id)} style={styles.content}>
+        <ThemedText numberOfLines={1} type="defaultSemiBold">
           {song.name || 'Untitled song'}
         </ThemedText>
         <ThemedText style={styles.dateText}>Created {formatCreatedDate(song.createdAt)}</ThemedText>
-      </View>
+      </Pressable>
 
       <Pressable
         accessibilityRole="button"
@@ -54,6 +55,7 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 4,
     marginRight: 12,
+    paddingVertical: 2,
   },
   dateText: {
     color: '#6B7280',

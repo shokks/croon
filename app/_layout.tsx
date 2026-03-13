@@ -13,6 +13,7 @@ export default function RootLayout() {
       <Stack>
         <Stack.Screen name="index" options={{ title: 'LyricLoop' }} />
         <Stack.Screen name="song/new" options={{ title: 'New Song' }} />
+        <Stack.Screen name="song/[id]" options={{ title: 'Edit Song' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
       <StatusBar style="auto" />

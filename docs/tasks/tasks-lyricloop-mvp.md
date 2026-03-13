@@ -72,17 +72,17 @@ Each parent task follows this lifecycle:
   - [x] 2.8 Get user approval
   - [x] 2.9 Commit changes, merge `feature/2-song-library` to `main`, delete branch (~10 min)
 
-- [ ] 3.0 Build Song Screen UI (lyrics editor + scroll speed + save)
-  - [ ] 3.1 Create and checkout branch: `git checkout -b feature/3-song-screen-ui` (~5 min)
-  - [ ] 3.2 Create `app/song/new.tsx` and `app/song/[id].tsx` — the `[id]` route loads the existing song from storage on mount; both share the same UI structure (~30 min)
-  - [ ] 3.3 Add a song name `TextInput` at the top of the Song Screen (~15 min)
-  - [ ] 3.4 Add a multiline `TextInput` for lyrics that fills the available vertical space (~20 min)
-  - [ ] 3.5 Create `components/SpeedSlider.tsx` — a 3-step control (Slow / Medium / Fast) as three tappable buttons; default to Medium (~30 min)
-  - [ ] 3.6 Add a "Save" button that calls `saveSong()` with current name + lyrics + speed; navigate back to library after save (~20 min)
-  - [ ] 3.7 Hide the speed slider and name/lyrics inputs when `recordingState !== 'idle'` (screen switches to teleprompter mode during recording) (~15 min)
-  - [ ] 3.8 Verify: type lyrics, set speed, save — song appears in library; open saved song — name/lyrics/speed all restored correctly (~15 min)
-  - [ ] 3.9 Get user approval
-  - [ ] 3.10 Commit changes, merge `feature/3-song-screen-ui` to `main`, delete branch (~10 min)
+- [x] 3.0 Build Song Screen UI (lyrics editor + scroll speed + save)
+  - [x] 3.1 Create and checkout branch: `git checkout -b feature/3-song-screen-ui` (~5 min)
+  - [x] 3.2 Create `app/song/new.tsx` and `app/song/[id].tsx` — the `[id]` route loads the existing song from storage on mount; both share the same UI structure (~30 min)
+  - [x] 3.3 Add a song name `TextInput` at the top of the Song Screen (~15 min)
+  - [x] 3.4 Add a multiline `TextInput` for lyrics that fills the available vertical space (~20 min)
+  - [x] 3.5 Create `components/SpeedSlider.tsx` — a 3-step control (Slow / Medium / Fast) as three tappable buttons; default to Medium (~30 min)
+  - [x] 3.6 Add a "Save" button that calls `saveSong()` with current name + lyrics + speed; navigate back to library after save (~20 min)
+  - [x] 3.7 Hide the speed slider and name/lyrics inputs when `recordingState !== 'idle'` (screen switches to teleprompter mode during recording) (~15 min)
+  - [x] 3.8 Verify: type lyrics, set speed, save — song appears in library; open saved song — name/lyrics/speed all restored correctly (~15 min)
+  - [x] 3.9 Get user approval
+  - [x] 3.10 Commit changes, merge `feature/3-song-screen-ui` to `main`, delete branch (~10 min)
 
 - [ ] 4.0 Implement auto-scroll engine
   - [ ] 4.1 Create and checkout branch: `git checkout -b feature/4-auto-scroll` (~5 min)
