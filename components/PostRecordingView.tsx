@@ -2,16 +2,20 @@ import { Feather } from '@expo/vector-icons';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import * as Sharing from 'expo-sharing';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { LayoutChangeEvent, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { LayoutChangeEvent, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Palette, withOpacity } from '@/constants/theme';
 
 type PostRecordingViewProps = {
   recordingUri: string | null;
-  onDone: () => void;
+  onBack: (uri: string, durationMs: number) => void;
+  onEdit?: () => void;
   onReRecord: () => void;
   songName: string;
+  lyrics?: string;
+  initialDurationMs?: number;
+  recordedAt?: string;
 };
 
 function formatDuration(seconds: number): string {
@@ -19,6 +23,12 @@ function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
   return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function formatRecordedAt(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 const BAR_COUNT = 56;
@@ -35,7 +45,7 @@ function buildWaveform(): number[] {
   });
 }
 
-export function PostRecordingView({ recordingUri, onDone, onReRecord, songName }: PostRecordingViewProps) {
+export function PostRecordingView({ initialDurationMs, lyrics, onBack, onEdit, onReRecord, recordedAt, recordingUri, songName }: PostRecordingViewProps) {
   const insets = useSafeAreaInsets();
   const player = useAudioPlayer();
   const playerStatus = useAudioPlayerStatus(player);
@@ -44,6 +54,7 @@ export function PostRecordingView({ recordingUri, onDone, onReRecord, songName }
   const [isWebPlaying, setIsWebPlaying] = useState(false);
   const [webDuration, setWebDuration] = useState(0);
   const [webCurrentTime, setWebCurrentTime] = useState(0);
+  const [webCanPlay, setWebCanPlay] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [waveformWidth, setWaveformWidth] = useState(0);
 
@@ -62,6 +73,7 @@ export function PostRecordingView({ recordingUri, onDone, onReRecord, songName }
     setIsWebPlaying(false);
     setWebDuration(0);
     setWebCurrentTime(0);
+    setWebCanPlay(true);
 
     if (webAudioRef.current) {
       webAudioRef.current.pause();
@@ -87,12 +99,16 @@ export function PostRecordingView({ recordingUri, onDone, onReRecord, songName }
       setIsWebPlaying(false);
       setWebCurrentTime(0);
     };
+    const onError = () => {
+      setWebCanPlay(false);
+    };
 
     audio.addEventListener('loadedmetadata', onLoadedMetadata);
     audio.addEventListener('timeupdate', onTimeUpdate);
     audio.addEventListener('play', onPlay);
     audio.addEventListener('pause', onPause);
     audio.addEventListener('ended', onEnded);
+    audio.addEventListener('error', onError);
     audio.load();
 
     webAudioRef.current = audio;
@@ -104,6 +120,7 @@ export function PostRecordingView({ recordingUri, onDone, onReRecord, songName }
       audio.removeEventListener('play', onPlay);
       audio.removeEventListener('pause', onPause);
       audio.removeEventListener('ended', onEnded);
+      audio.removeEventListener('error', onError);
 
       if (webAudioRef.current === audio) {
         webAudioRef.current = null;
@@ -116,20 +133,25 @@ export function PostRecordingView({ recordingUri, onDone, onReRecord, songName }
     try {
       setErrorMessage(null);
       if (Platform.OS === 'web') {
+        if (!webCanPlay) {
+          setErrorMessage('Playback unavailable in browser — open on your phone to play.');
+          return;
+        }
         const webAudio = webAudioRef.current;
-        if (!webAudio) { setErrorMessage('No recording available yet.'); return; }
+        if (!webAudio || webAudio.readyState === 0) {
+          setErrorMessage('Playback unavailable in browser — open on your phone to play.');
+          return;
+        }
         if (isWebPlaying) {
           webAudio.pause();
           webAudio.currentTime = 0;
           setWebCurrentTime(0);
           return;
         }
-
         if (webAudio.duration && webAudio.currentTime >= webAudio.duration - 0.01) {
           webAudio.currentTime = 0;
           setWebCurrentTime(0);
         }
-
         await webAudio.play();
         return;
       }
@@ -139,7 +161,7 @@ export function PostRecordingView({ recordingUri, onDone, onReRecord, songName }
     } catch {
       setErrorMessage('Could not play the recording.');
     }
-  }, [isWebPlaying, player, playerStatus.didJustFinish, playerStatus.playing, recordingUri]);
+  }, [isWebPlaying, player, playerStatus.didJustFinish, playerStatus.playing, recordingUri, webCanPlay]);
 
   const handleSharePress = useCallback(async () => {
     if (!recordingUri) { setErrorMessage('No recording available yet.'); return; }
@@ -165,25 +187,26 @@ export function PostRecordingView({ recordingUri, onDone, onReRecord, songName }
     onReRecord();
   }, [onReRecord, player]);
 
-  const handleDone = useCallback(async () => {
+  const handleBack = useCallback(async () => {
     if (webAudioRef.current) {
       webAudioRef.current.pause();
       webAudioRef.current.currentTime = 0;
       setIsWebPlaying(false);
       setWebCurrentTime(0);
     }
-
     try {
       player.pause();
       await player.seekTo(0);
     } catch {}
-
     setErrorMessage(null);
-    onDone();
-  }, [onDone, player]);
+    const playerDurationMs = Math.round((Platform.OS === 'web' ? webDuration : playerStatus.duration) * 1000);
+    const durationMs = playerDurationMs > 0 ? playerDurationMs : (initialDurationMs ?? 0);
+    onBack(recordingUri ?? '', durationMs);
+  }, [initialDurationMs, onBack, player, playerStatus.duration, recordingUri, webDuration]);
 
   const isPlaying = Platform.OS === 'web' ? isWebPlaying : playerStatus.playing;
-  const duration = Platform.OS === 'web' ? webDuration : playerStatus.duration;
+  const playerDuration = Platform.OS === 'web' ? webDuration : playerStatus.duration;
+  const duration = playerDuration > 0 ? playerDuration : (initialDurationMs ?? 0) / 1000;
   const currentTime = Platform.OS === 'web' ? webCurrentTime : playerStatus.currentTime;
   const playProgress = duration > 0 ? Math.min(currentTime / duration, 1) : 0;
 
@@ -197,20 +220,29 @@ export function PostRecordingView({ recordingUri, onDone, onReRecord, songName }
       ]}>
 
       <View style={styles.topRow}>
+        <Pressable
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 16 }}
+          onPress={() => { void handleBack(); }}
+          style={styles.backButton}>
+          <Feather color={Palette.accent} name="chevron-left" size={26} />
+        </Pressable>
+
         <Text numberOfLines={1} style={styles.songName}>
           {songName || 'Untitled song'}
         </Text>
 
-        <Pressable
-          hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
-          onPress={() => void handleDone()}
-          style={styles.doneAction}>
-          <Text style={styles.doneActionLabel}>Done</Text>
-        </Pressable>
+        {onEdit ? (
+          <Pressable
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            onPress={onEdit}
+            style={styles.editAction}>
+            <Feather color={Palette.textSecondary} name="edit-2" size={17} />
+          </Pressable>
+        ) : <View style={styles.editPlaceholder} />}
       </View>
 
-      {/* Waveform + duration — vertically centered in remaining space */}
-      <View style={styles.middleSection}>
+      {/* Waveform + duration — centered when no lyrics, top-aligned when lyrics present */}
+      <View style={lyrics ? styles.waveformSection : styles.middleSection}>
         <View
           onLayout={(e: LayoutChangeEvent) => setWaveformWidth(e.nativeEvent.layout.width)}
           style={styles.waveformContainer}>
@@ -227,24 +259,34 @@ export function PostRecordingView({ recordingUri, onDone, onReRecord, songName }
         <Text style={styles.duration}>{formatDuration(duration)}</Text>
       </View>
 
+      {/* Lyrics — only in review mode */}
+      {lyrics ? (
+        <ScrollView
+          contentContainerStyle={styles.lyricsContent}
+          showsVerticalScrollIndicator={false}
+          style={styles.lyricsScroll}>
+          <Text style={styles.lyricsText}>{lyrics}</Text>
+        </ScrollView>
+      ) : null}
+
       {/* Action row — Re-record | Play | Share */}
       <View style={styles.actionRow}>
         <Pressable
-          hitSlop={{ top: 16, bottom: 16, left: 20, right: 8 }}
           onPress={() => void handleReRecord()}
-          style={styles.textAction}>
-          <Text style={styles.textActionLabel}>Re-record</Text>
+          style={({ pressed }) => [styles.sideAction, pressed && styles.sideActionPressed]}>
+          <Feather color={Palette.textSecondary} name="rotate-ccw" size={16} />
+          <Text style={styles.sideActionLabel}>Re-record</Text>
         </Pressable>
 
         <Pressable onPress={() => void handlePlayPress()} style={styles.playButton}>
-          <Feather color={Palette.textPrimary} name={isPlaying ? 'square' : 'play'} size={28} />
+          <Feather color={Palette.background} name={isPlaying ? 'square' : 'play'} size={30} />
         </Pressable>
 
         <Pressable
-          hitSlop={{ top: 16, bottom: 16, left: 8, right: 20 }}
           onPress={() => void handleSharePress()}
-          style={styles.textAction}>
-          <Text style={styles.textActionLabel}>Share</Text>
+          style={({ pressed }) => [styles.sideAction, pressed && styles.sideActionPressed]}>
+          <Feather color={Palette.textSecondary} name="share" size={16} />
+          <Text style={styles.sideActionLabel}>Share</Text>
         </Pressable>
       </View>
 
@@ -262,28 +304,43 @@ const styles = StyleSheet.create({
   topRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 32,
+    gap: 8,
+    marginBottom: 20,
   },
   songName: {
     color: Palette.textPrimary,
     flex: 1,
     fontFamily: 'DM-Sans-SemiBold',
     fontSize: 18,
-    marginRight: 16,
   },
-  doneAction: {
-    paddingHorizontal: 4,
-    paddingVertical: 4,
+  backButton: {
+    padding: 4,
   },
-  doneActionLabel: {
-    color: Palette.accent,
-    fontFamily: 'DM-Sans-SemiBold',
-    fontSize: 16,
+  editAction: {
+    padding: 4,
+  },
+  editPlaceholder: {
+    width: 25,
   },
   middleSection: {
     flex: 1,
     justifyContent: 'center',
+  },
+  waveformSection: {
+    marginBottom: 20,
+  },
+  lyricsScroll: {
+    flex: 1,
+    marginBottom: 20,
+  },
+  lyricsContent: {
+    paddingBottom: 8,
+  },
+  lyricsText: {
+    color: Palette.textSecondary,
+    fontFamily: 'Lora',
+    fontSize: 18,
+    lineHeight: 32,
   },
   waveformContainer: {
     alignItems: 'flex-end',
@@ -293,10 +350,10 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   waveformBar: {
-    backgroundColor: withOpacity(Palette.accent, 0.4),
-    borderRadius: 1,
+    backgroundColor: withOpacity(Palette.accent, 0.55),
+    borderRadius: 2,
     flex: 1,
-    marginHorizontal: 0.5,
+    marginHorizontal: 0.75,
   },
   playhead: {
     backgroundColor: Palette.accent,
@@ -314,27 +371,39 @@ const styles = StyleSheet.create({
   actionRow: {
     alignItems: 'center',
     flexDirection: 'row',
+    gap: 12,
     justifyContent: 'center',
-    marginTop: 32,
+    marginTop: 20,
   },
-  textAction: {
+  sideAction: {
     alignItems: 'center',
+    backgroundColor: Palette.surface,
+    borderRadius: 14,
     flex: 1,
+    gap: 6,
     justifyContent: 'center',
-    paddingVertical: 8,
+    paddingVertical: 16,
   },
-  textActionLabel: {
+  sideActionPressed: {
+    opacity: 0.65,
+  },
+  sideActionLabel: {
     color: Palette.textSecondary,
     fontFamily: 'DM-Sans',
-    fontSize: 16,
+    fontSize: 13,
   },
   playButton: {
     alignItems: 'center',
-    backgroundColor: Palette.surface,
-    borderRadius: 36,
-    height: 72,
+    backgroundColor: Palette.accent,
+    borderRadius: 40,
+    elevation: 10,
+    height: 80,
     justifyContent: 'center',
-    width: 72,
+    shadowColor: Palette.accent,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.5,
+    shadowRadius: 18,
+    width: 80,
   },
   errorText: {
     color: Palette.recordRed,

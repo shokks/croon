@@ -9,11 +9,12 @@ import { PostRecordingView } from '@/components/PostRecordingView';
 import { RecordButton } from '@/components/RecordButton';
 import { Palette } from '@/constants/theme';
 import { useRecording } from '@/lib/useRecording';
-import { getSongs, saveSong } from '@/lib/storage';
+import { getSongs, saveRecording, saveSong } from '@/lib/storage';
 import type { ScrollSpeed, Song } from '@/types';
 
 type RecordingScreenProps = {
   songId: string;
+  reviewMode?: boolean;
 };
 
 const SPEED_OPTIONS: { label: string; value: ScrollSpeed }[] = [
@@ -45,7 +46,7 @@ function AudioActivityBar() {
   return <Animated.View style={[styles.audioActivityBar, { opacity: opacityAnim }]} />;
 }
 
-export function RecordingScreen({ songId }: RecordingScreenProps) {
+export function RecordingScreen({ reviewMode = false, songId }: RecordingScreenProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -53,6 +54,7 @@ export function RecordingScreen({ songId }: RecordingScreenProps) {
   const [lyrics, setLyrics] = useState('');
   const [scrollSpeed, setScrollSpeed] = useState<ScrollSpeed>('medium');
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [reviewUri, setReviewUri] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const songRef = useRef<Song | null>(null);
 
@@ -68,8 +70,11 @@ export function RecordingScreen({ songId }: RecordingScreenProps) {
       setLyrics(song.lyrics);
       setScrollSpeed(song.scrollSpeed);
       songRef.current = song;
+      if (reviewMode && song.recording?.uri) {
+        setReviewUri(song.recording.uri);
+      }
     })();
-  }, [songId]);
+  }, [reviewMode, songId]);
 
   // Elapsed timer — only runs while recording
   useEffect(() => {
@@ -101,11 +106,40 @@ export function RecordingScreen({ songId }: RecordingScreenProps) {
     await stopRecording();
   }, [stopRecording]);
 
-  const handleDone = useCallback(() => {
-    router.replace('/');
+  const handleDone = useCallback(async (uri: string, durationMs: number) => {
+    if (uri) {
+      await saveRecording(songId, { uri, durationMs, recordedAt: new Date().toISOString() });
+    }
+    router.dismissAll();
+  }, [router, songId]);
+
+  const handleReviewDone = useCallback(() => {
+    router.dismissAll();
   }, [router]);
 
+  const handleEdit = useCallback(() => {
+    router.replace(`/song/${songId}` as Parameters<typeof router.replace>[0]);
+  }, [router, songId]);
+
   const bottomInset = Math.max(insets.bottom, 16);
+
+  // ─── Review (existing recording opened from Library) ─────────────────────────
+
+  if (reviewMode && reviewUri && recordingState === 'idle') {
+    return (
+      <View style={styles.container}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <PostRecordingView
+          lyrics={lyrics}
+          onBack={handleReviewDone}
+          onEdit={handleEdit}
+          onReRecord={() => setReviewUri(null)}
+          recordingUri={reviewUri}
+          songName={songName}
+        />
+      </View>
+    );
+  }
 
   // ─── Pre-Record ──────────────────────────────────────────────────────────────
 
@@ -167,9 +201,7 @@ export function RecordingScreen({ songId }: RecordingScreenProps) {
         <LyricsScrollView lyrics={lyrics} scrollSpeed={scrollSpeed} />
         <AudioActivityBar />
         <View style={[styles.recordArea, { paddingBottom: bottomInset }]}>
-          <Text style={[styles.timer, { bottom: bottomInset + 80 + 12 }]}>
-            {formatTime(elapsedSeconds)}
-          </Text>
+          <Text style={styles.timer}>{formatTime(elapsedSeconds)}</Text>
           <RecordButton
             onStart={() => void handleStartRecording()}
             onStop={() => void handleStopRecording()}
@@ -186,7 +218,7 @@ export function RecordingScreen({ songId }: RecordingScreenProps) {
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
       <PostRecordingView
-        onDone={handleDone}
+        onBack={(uri, durationMs) => { void handleDone(uri, durationMs); }}
         onReRecord={resetRecording}
         recordingUri={recordingUri}
         songName={songName}
@@ -228,14 +260,17 @@ const styles = StyleSheet.create({
   },
   speedChip: {
     alignItems: 'center',
-    backgroundColor: Palette.surfaceRaised,
-    borderRadius: 8,
+    backgroundColor: Palette.surface,
+    borderColor: Palette.border,
+    borderRadius: 10,
+    borderWidth: 1,
     flex: 1,
-    height: 36,
+    height: 38,
     justifyContent: 'center',
   },
   speedChipActive: {
     backgroundColor: Palette.accentMuted,
+    borderColor: Palette.accent,
   },
   speedLabel: {
     color: Palette.textSecondary,
@@ -249,7 +284,8 @@ const styles = StyleSheet.create({
   },
   recordArea: {
     alignItems: 'center',
-    paddingTop: 8,
+    gap: 14,
+    paddingTop: 12,
   },
   audioActivityBar: {
     backgroundColor: Palette.accent,
@@ -257,12 +293,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
   },
   timer: {
-    color: Palette.textSecondary,
+    color: Palette.textDisabled,
     fontFamily: 'DM-Sans',
-    fontSize: 13,
+    fontSize: 14,
     fontVariant: ['tabular-nums'],
-    left: 20,
-    position: 'absolute',
+    letterSpacing: 1,
   },
   errorText: {
     color: Palette.recordRed,

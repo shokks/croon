@@ -4,6 +4,13 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Palette } from '@/constants/theme';
 import type { Song } from '@/types';
 
+function formatDuration(ms: number): string {
+  const totalSeconds = Math.round(ms / 1000);
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
 type SongListItemProps = {
   song: Song;
   onDelete: (id: string) => void;
@@ -26,7 +33,11 @@ export function SongListItem({ song, onDelete, onPress }: SongListItemProps) {
 
   return (
     <View style={styles.container}>
-      <Pressable onPress={() => onPress(song.id)} style={styles.content}>
+      {song.recording ? <View style={styles.recordedAccent} /> : null}
+
+      <Pressable
+        onPress={() => onPress(song.id)}
+        style={({ pressed }) => [styles.content, pressed && styles.contentPressed]}>
         <Text numberOfLines={1} style={styles.title}>
           {song.name || 'Untitled song'}
         </Text>
@@ -35,7 +46,16 @@ export function SongListItem({ song, onDelete, onPress }: SongListItemProps) {
             {preview}
           </Text>
         ) : null}
-        <Text style={styles.date}>{formatDate(song.createdAt)}</Text>
+        <View style={styles.metaRow}>
+          <Text style={styles.date}>{formatDate(song.createdAt)}</Text>
+          {song.recording ? (
+            <View style={styles.recordingBadge}>
+              <Text style={styles.recordingBadgeText}>
+                {'▶  ' + formatDuration(song.recording.durationMs)}
+              </Text>
+            </View>
+          ) : null}
+        </View>
       </Pressable>
 
       <Pressable
@@ -44,7 +64,7 @@ export function SongListItem({ song, onDelete, onPress }: SongListItemProps) {
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         onPress={() => onDelete(song.id)}
         style={styles.deleteButton}>
-        <Feather color={Palette.textDisabled} name="trash-2" size={16} />
+        <Feather color={Palette.textDisabled} name="trash-2" size={15} />
       </Pressable>
     </View>
   );
@@ -53,17 +73,30 @@ export function SongListItem({ song, onDelete, onPress }: SongListItemProps) {
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    borderBottomColor: Palette.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    backgroundColor: Palette.surface,
+    borderRadius: 14,
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginBottom: 10,
     minHeight: 64,
+    overflow: 'hidden',
+    paddingRight: 8,
     paddingVertical: 14,
+  },
+  recordedAccent: {
+    alignSelf: 'stretch',
+    backgroundColor: Palette.accent,
+    marginRight: 14,
+    opacity: 0.6,
+    width: 3,
   },
   content: {
     flex: 1,
     gap: 3,
-    marginRight: 12,
+    paddingLeft: 16,
+  },
+  contentPressed: {
+    opacity: 0.7,
   },
   title: {
     color: Palette.textPrimary,
@@ -77,15 +110,32 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
   },
+  metaRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 2,
+  },
   date: {
     color: Palette.textDisabled,
     fontFamily: 'DM-Sans',
     fontSize: 12,
     lineHeight: 16,
-    marginTop: 2,
+  },
+  recordingBadge: {
+    backgroundColor: Palette.accentMuted,
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  recordingBadgeText: {
+    color: Palette.accent,
+    fontFamily: 'DM-Sans',
+    fontSize: 11,
+    lineHeight: 16,
   },
   deleteButton: {
     borderRadius: 20,
-    padding: 8,
+    padding: 10,
   },
 });

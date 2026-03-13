@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Palette, withOpacity } from '@/constants/theme';
@@ -13,6 +13,7 @@ type LyricsScrollViewProps = {
 
 export function LyricsScrollView({ lyrics, scrollSpeed }: LyricsScrollViewProps) {
   const insets = useSafeAreaInsets();
+  const { height: screenHeight } = useWindowDimensions();
 
   const {
     isPaused,
@@ -76,7 +77,7 @@ export function LyricsScrollView({ lyrics, scrollSpeed }: LyricsScrollViewProps)
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
         style={styles.scrollView}>
-        <Text style={[styles.lyricsText, { paddingTop: insets.top + 20 }]}>
+        <Text style={[styles.lyricsText, { paddingTop: insets.top + 20, paddingBottom: screenHeight }]}>
           {lyrics || 'No lyrics.'}
         </Text>
       </ScrollView>
@@ -102,7 +103,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Lora',
     fontSize: 24,
     lineHeight: 41,
-    paddingBottom: 480,
     paddingHorizontal: 24,
   },
   pauseBadge: {

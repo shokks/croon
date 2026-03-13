@@ -1,4 +1,6 @@
+import { Feather } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { type Href, Stack, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -17,11 +19,18 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Palette } from '@/constants/theme';
 import { getSongs, saveSong } from '@/lib/storage';
-import type { ScrollSpeed } from '@/types';
+import type { ScrollSpeed, SongRecording } from '@/types';
 
 type SongEditorScreenProps = {
   songId?: string;
 };
+
+function formatDuration(ms: number): string {
+  const totalSeconds = Math.round(ms / 1000);
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
 
 export function SongEditorScreen({ songId }: SongEditorScreenProps) {
   const router = useRouter();
@@ -33,11 +42,23 @@ export function SongEditorScreen({ songId }: SongEditorScreenProps) {
   const [isLoading, setIsLoading] = useState(Boolean(songId));
   const [isMissingSong, setIsMissingSong] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [lastRecording, setLastRecording] = useState<SongRecording | null>(null);
+
+  const miniPlayer = useAudioPlayer();
+  const miniPlayerStatus = useAudioPlayerStatus(miniPlayer);
 
   const stableSongId = useRef(songId ?? `song-${Date.now()}`);
   const createdAtRef = useRef<string | null>(null);
   const lyricsRef = useRef<TextInput>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Refs tracking latest values so doSave never captures stale state
+  const nameRef = useRef('');
+  const lyricsValueRef = useRef('');
+  const scrollSpeedRef = useRef<ScrollSpeed>('medium');
+  const lastRecordingRef = useRef<SongRecording | null>(null);
+  // True once an existing song has finished loading (new songs start true)
+  const isLoadedRef = useRef(!songId);
 
   // 0 = preview mode, 1 = edit mode
   const modeAnim = useRef(new Animated.Value(0)).current;
@@ -66,8 +87,14 @@ export function SongEditorScreen({ songId }: SongEditorScreenProps) {
       setName(song.name);
       setLyrics(song.lyrics);
       setScrollSpeed(song.scrollSpeed);
+      setLastRecording(song.recording ?? null);
+      nameRef.current = song.name;
+      lyricsValueRef.current = song.lyrics;
+      scrollSpeedRef.current = song.scrollSpeed;
+      lastRecordingRef.current = song.recording ?? null;
       createdAtRef.current = song.createdAt;
       stableSongId.current = song.id;
+      isLoadedRef.current = true;
       setIsLoading(false);
     })();
 
@@ -100,61 +127,91 @@ export function SongEditorScreen({ songId }: SongEditorScreenProps) {
     };
   }, [modeAnim]);
 
-  // Auto-save
-  const doSave = useCallback(async (n: string, l: string, s: ScrollSpeed) => {
+  // Load recording into mini-player when available (native only)
+  useEffect(() => {
+    if (Platform.OS === 'web' || !lastRecording?.uri) return;
+    miniPlayer.replace(lastRecording.uri);
+  }, [miniPlayer, lastRecording?.uri]);
+
+  const handleMiniPlayerPress = useCallback(() => {
+    if (!lastRecording?.uri) return;
+    if (miniPlayerStatus.playing) {
+      miniPlayer.pause();
+    } else {
+      if (miniPlayerStatus.didJustFinish) {
+        void miniPlayer.seekTo(0);
+      }
+      miniPlayer.play();
+    }
+  }, [lastRecording?.uri, miniPlayer, miniPlayerStatus.didJustFinish, miniPlayerStatus.playing]);
+
+  // Auto-save — reads from refs so it is always stable and never stale
+  const doSave = useCallback(async () => {
     if (!createdAtRef.current) {
+      // New song: only save if the user has actually typed something
+      if (!nameRef.current.trim() && !lyricsValueRef.current.trim()) return;
       createdAtRef.current = new Date().toISOString();
     }
     await saveSong({
       id: stableSongId.current,
-      name: n.trim() || 'Untitled song',
-      lyrics: l,
-      scrollSpeed: s,
+      name: nameRef.current.trim() || 'Untitled song',
+      lyrics: lyricsValueRef.current,
+      scrollSpeed: scrollSpeedRef.current,
       createdAt: createdAtRef.current,
+      recording: lastRecordingRef.current ?? undefined,
     });
   }, []);
 
-  const scheduleSave = useCallback(
-    (n: string, l: string, s: ScrollSpeed) => {
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = setTimeout(() => void doSave(n, l, s), 400);
-    },
-    [doSave]
-  );
+  const scheduleSave = useCallback(() => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => void doSave(), 400);
+  }, [doSave]);
 
-  // Flush save when leaving the screen
+  // Flush save when leaving the screen — stable callback, reads from refs
   useFocusEffect(
     useCallback(() => {
       return () => {
+        if (!isLoadedRef.current) return; // existing song not yet loaded, skip
         if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-        void doSave(name, lyrics, scrollSpeed);
+        void doSave();
       };
-    }, [doSave, name, lyrics, scrollSpeed])
+    }, [doSave])
   );
 
   const handleNameChange = (text: string) => {
     setName(text);
-    scheduleSave(text, lyrics, scrollSpeed);
+    nameRef.current = text;
+    scheduleSave();
   };
 
   const handleLyricsChange = (text: string) => {
     setLyrics(text);
-    scheduleSave(name, text, scrollSpeed);
+    lyricsValueRef.current = text;
+    scheduleSave();
   };
 
   const handleRecord = useCallback(async () => {
-    if (!lyrics.trim()) return;
+    if (!lyricsValueRef.current.trim()) return;
     Keyboard.dismiss();
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    await doSave(name, lyrics, scrollSpeed);
+    await doSave();
     router.push(`/song/record/${stableSongId.current}` as Href);
-  }, [doSave, lyrics, name, router, scrollSpeed]);
+  }, [doSave, router]);
 
   const editLayerOpacity = modeAnim;
   const previewLayerOpacity = modeAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 0] });
 
   const hasLyrics = lyrics.trim().length > 0;
   const bottomInset = Math.max(insets.bottom, 16);
+
+  const pencilButton = (
+    <Pressable
+      hitSlop={{ top: 8, bottom: 8, left: 12, right: 4 }}
+      onPress={() => lyricsRef.current?.focus()}
+      style={styles.headerPencil}>
+      <Feather color={Palette.accent} name="edit-2" size={17} />
+    </Pressable>
+  );
 
   if (isLoading) {
     return (
@@ -179,7 +236,7 @@ export function SongEditorScreen({ songId }: SongEditorScreenProps) {
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}>
-      <Stack.Screen options={{ title: name.trim() || 'New Song' }} />
+      <Stack.Screen options={{ title: name.trim() || 'New Song', headerRight: () => pencilButton }} />
 
       {/* Song name */}
       <TextInput
@@ -216,15 +273,13 @@ export function SongEditorScreen({ songId }: SongEditorScreenProps) {
         <Animated.View
           pointerEvents={isEditing ? 'none' : 'auto'}
           style={[StyleSheet.absoluteFill, { opacity: previewLayerOpacity }]}>
-          <Pressable onPress={() => lyricsRef.current?.focus()} style={StyleSheet.absoluteFill}>
-            <ScrollView
-              contentContainerStyle={styles.lyricsPreviewContent}
-              showsVerticalScrollIndicator={false}>
-              <Text style={lyrics ? styles.lyricsPreviewText : styles.lyricsPreviewPlaceholder}>
-                {lyrics || 'Tap to add lyrics...'}
-              </Text>
-            </ScrollView>
-          </Pressable>
+          <ScrollView
+            contentContainerStyle={styles.lyricsPreviewContent}
+            showsVerticalScrollIndicator={false}>
+            <Text style={lyrics ? styles.lyricsPreviewText : styles.lyricsPreviewPlaceholder}>
+              {lyrics || 'Tap the pencil to add lyrics...'}
+            </Text>
+          </ScrollView>
         </Animated.View>
       </View>
 
@@ -240,19 +295,47 @@ export function SongEditorScreen({ songId }: SongEditorScreenProps) {
         </View>
       )}
 
+      {/* Last take mini-player — only when a recording exists */}
+      {lastRecording && !isEditing && (
+        <Pressable onPress={handleMiniPlayerPress} style={styles.miniPlayer}>
+          <Feather
+            color={Palette.accent}
+            name={miniPlayerStatus.playing ? 'pause' : 'play'}
+            size={14}
+          />
+          <Text style={styles.miniPlayerText}>
+            Last take
+            <Text style={styles.miniPlayerDuration}>
+              {'  ·  ' + formatDuration(lastRecording.durationMs)}
+            </Text>
+          </Text>
+        </Pressable>
+      )}
+
       {/* Record CTA */}
-      <Pressable
-        disabled={!hasLyrics}
-        onPress={() => void handleRecord()}
+      <View
         style={[
-          styles.recordCta,
-          !hasLyrics && styles.recordCtaDisabled,
-          { paddingBottom: isEditing ? 8 : bottomInset + 8 },
+          styles.recordCtaWrap,
+          { paddingBottom: isEditing ? 10 : bottomInset + 10 },
         ]}>
-        <Text style={[styles.recordCtaText, !hasLyrics && styles.recordCtaTextDisabled]}>
-          Record →
-        </Text>
-      </Pressable>
+        <Pressable
+          disabled={!hasLyrics}
+          onPress={() => void handleRecord()}
+          style={({ pressed }) => [
+            styles.recordCta,
+            !hasLyrics && styles.recordCtaDisabled,
+            pressed && styles.recordCtaPressed,
+          ]}>
+          <Feather
+            color={hasLyrics ? Palette.background : Palette.textDisabled}
+            name="mic"
+            size={17}
+          />
+          <Text style={[styles.recordCtaText, !hasLyrics && styles.recordCtaTextDisabled]}>
+            Start Recording
+          </Text>
+        </Pressable>
+      </View>
     </KeyboardAvoidingView>
   );
 }
@@ -327,23 +410,62 @@ const styles = StyleSheet.create({
     fontFamily: 'DM-Sans-SemiBold',
     fontSize: 16,
   },
+  recordCtaWrap: {
+    backgroundColor: Palette.background,
+    borderTopColor: Palette.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 20,
+    paddingTop: 14,
+  },
   recordCta: {
+    alignItems: 'center',
+    backgroundColor: Palette.accent,
+    borderRadius: 14,
+    flexDirection: 'row',
+    gap: 9,
+    justifyContent: 'center',
+    paddingVertical: 16,
+    shadowColor: Palette.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+  },
+  recordCtaDisabled: {
+    backgroundColor: Palette.surfaceRaised,
+    shadowOpacity: 0,
+  },
+  recordCtaPressed: {
+    opacity: 0.85,
+  },
+  recordCtaText: {
+    color: Palette.background,
+    fontFamily: 'DM-Sans-SemiBold',
+    fontSize: 16,
+  },
+  recordCtaTextDisabled: {
+    color: Palette.textDisabled,
+  },
+  miniPlayer: {
     alignItems: 'center',
     backgroundColor: Palette.surface,
     borderTopColor: Palette.border,
     borderTopWidth: StyleSheet.hairlineWidth,
-    justifyContent: 'center',
-    paddingTop: 16,
+    flexDirection: 'row',
+    gap: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
   },
-  recordCtaDisabled: {
-    opacity: 0.35,
+  miniPlayerText: {
+    color: Palette.textSecondary,
+    fontFamily: 'DM-Sans',
+    fontSize: 14,
   },
-  recordCtaText: {
-    color: Palette.accent,
-    fontFamily: 'DM-Sans-SemiBold',
-    fontSize: 17,
-  },
-  recordCtaTextDisabled: {
+  miniPlayerDuration: {
     color: Palette.textDisabled,
+    fontFamily: 'DM-Sans',
+    fontSize: 13,
+  },
+  headerPencil: {
+    padding: 4,
   },
 });

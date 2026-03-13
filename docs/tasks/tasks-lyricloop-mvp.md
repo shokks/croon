@@ -117,12 +117,12 @@ Each parent task follows this lifecycle:
   - [x] 6.8 Commit changes, merge `feature/6-post-recording` to `main`, delete branch (~10 min)
 
 - [ ] 7.0 Wire navigation end-to-end and validate full user flow
-  - [ ] 7.1 Create and checkout branch: `git checkout -b feature/7-e2e-validation` (~5 min)
-  - [ ] 7.2 Ensure first-time users (no saved songs) land directly on `/song/new` — redirect in `app/index.tsx` if `songs.length === 0` (~15 min)
-  - [ ] 7.3 Ensure the back button from Song Screen goes to the library without silently losing unsaved lyrics (prompt "Save before leaving?" or auto-save draft) (~20 min)
-  - [ ] 7.4 Walk through the full happy path on device: open app → paste lyrics → set speed → tap record → sing → tap stop → play back → share → re-record → save song → find it in library (~20 min)
-  - [ ] 7.5 Test with Spotify playing throughout — confirm it never pauses at any point in the flow (~15 min)
-  - [ ] 7.6 Fix any layout issues on small screens (iPhone SE) and confirm lyrics are readable in low light (~20 min)
-  - [ ] 7.7 Verify all PRD success metrics: 3 flows completed without confusion, Spotify stays active, saved song reopens correctly, share works end-to-end (~15 min)
-  - [ ] 7.8 Get user approval
+  - [x] 7.1 Create and checkout branch: `git checkout -b feature/7-e2e-validation` (~5 min)
+  - [x] 7.2 Ensure first-time users (no saved songs) land directly on `/song/new` — redirect in `app/index.tsx` if `songs.length === 0` (~15 min)
+  - [x] 7.3 Ensure the back button from Song Screen goes to the library without silently losing unsaved lyrics (prompt "Save before leaving?" or auto-save draft) (~20 min)
+  - [x] 7.4 Walk through the full happy path on device: open app → paste lyrics → set speed → tap record → sing → tap stop → play back → share → re-record → save song → find it in library (~20 min)
+  - [x] 7.5 Test with Spotify playing throughout — confirm it never pauses at any point in the flow (~15 min)
+  - [x] 7.6 Fix any layout issues on small screens (iPhone SE) and confirm lyrics are readable in low light (~20 min)
+  - [x] 7.7 Verify all PRD success metrics: 3 flows completed without confusion, Spotify stays active, saved song reopens correctly, share works end-to-end (~15 min)
+  - [x] 7.8 Get user approval
   - [ ] 7.9 Commit changes, merge `feature/7-e2e-validation` to `main`, delete branch (~10 min)

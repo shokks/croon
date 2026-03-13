@@ -42,6 +42,7 @@ export default function LibraryScreen() {
   const insets = useSafeAreaInsets();
   const [songs, setSongs] = useState<Song[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const hasAutoRedirectedRef = useRef(false);
 
   const loadSongs = useCallback(async () => {
     const savedSongs = await getSongs();
@@ -55,6 +56,17 @@ export default function LibraryScreen() {
     }, [loadSongs])
   );
 
+  useEffect(() => {
+    if (isLoading || hasAutoRedirectedRef.current) {
+      return;
+    }
+
+    if (songs.length === 0) {
+      hasAutoRedirectedRef.current = true;
+      router.push('/song/new' as Href);
+    }
+  }, [isLoading, router, songs.length]);
+
   const handleDeleteSong = useCallback(
     async (id: string) => {
       await deleteSong(id);
@@ -65,17 +77,20 @@ export default function LibraryScreen() {
 
   const handleOpenSong = useCallback(
     (id: string) => {
-      router.push(`/song/${id}` as Href);
+      const song = songs.find((s) => s.id === id);
+      if (song?.recording) {
+        router.push(`/song/record/${id}?review=true` as Href);
+      } else {
+        router.push(`/song/${id}` as Href);
+      }
     },
-    [router]
+    [router, songs]
   );
 
   const fabBottom = Math.max(insets.bottom + 16, 32);
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: 'LyricLoop' }} />
-
       <FlatList
         contentContainerStyle={[
           songs.length === 0 ? styles.emptyContainer : styles.listContent,
@@ -86,7 +101,10 @@ export default function LibraryScreen() {
         ListEmptyComponent={
           isLoading ? null : (
             <View style={styles.emptyContent}>
-              <Text style={styles.emptyPrimary}>No songs yet.</Text>
+              <View style={styles.emptyIcon}>
+                <Feather color={Palette.textDisabled} name="mic-off" size={32} />
+              </View>
+              <Text style={styles.emptyPrimary}>No songs yet</Text>
               <Text style={styles.emptySecondary}>Tap + to record your first.</Text>
             </View>
           )
@@ -118,8 +136,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listContent: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
+    paddingHorizontal: 16,
+    paddingTop: 12,
   },
   emptyContainer: {
     flexGrow: 1,
@@ -128,20 +146,29 @@ const styles = StyleSheet.create({
   },
   emptyContent: {
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
+  },
+  emptyIcon: {
+    alignItems: 'center',
+    backgroundColor: Palette.surface,
+    borderRadius: 32,
+    height: 64,
+    justifyContent: 'center',
+    marginBottom: 4,
+    width: 64,
   },
   emptyPrimary: {
     color: Palette.textSecondary,
-    fontFamily: 'DM-Sans',
-    fontSize: 16,
+    fontFamily: 'DM-Sans-SemiBold',
+    fontSize: 17,
     lineHeight: 24,
     textAlign: 'center',
   },
   emptySecondary: {
     color: Palette.textDisabled,
     fontFamily: 'DM-Sans',
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 15,
+    lineHeight: 22,
     textAlign: 'center',
   },
   fab: {

@@ -1,8 +1,17 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import type { Song } from '@/types';
+import type { Song, SongRecording } from '@/types';
 
 const SONGS_STORAGE_KEY = 'lyricloop:songs';
+
+function normalizeRecording(value: unknown): SongRecording | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const r = value as Partial<SongRecording>;
+  if (typeof r.uri !== 'string' || typeof r.durationMs !== 'number' || typeof r.recordedAt !== 'string') {
+    return undefined;
+  }
+  return { uri: r.uri, durationMs: r.durationMs, recordedAt: r.recordedAt };
+}
 
 function normalizeSongs(value: unknown): Song[] {
   if (!Array.isArray(value)) {
@@ -23,6 +32,12 @@ function normalizeSongs(value: unknown): Song[] {
       typeof candidate.scrollSpeed === 'string' &&
       typeof candidate.createdAt === 'string'
     );
+  }).map((item) => {
+    const candidate = item as Song & { recording?: unknown };
+    return {
+      ...candidate,
+      recording: normalizeRecording(candidate.recording),
+    };
   });
 }
 
@@ -61,6 +76,14 @@ export async function deleteSong(id: string): Promise<void> {
   const songs = await getSongs();
   const nextSongs = songs.filter((song) => song.id !== id);
   await AsyncStorage.setItem(SONGS_STORAGE_KEY, JSON.stringify(nextSongs));
+}
+
+export async function saveRecording(songId: string, recording: SongRecording): Promise<void> {
+  const songs = await getSongs();
+  const index = songs.findIndex((s) => s.id === songId);
+  if (index < 0) return;
+  songs[index] = { ...songs[index], recording };
+  await AsyncStorage.setItem(SONGS_STORAGE_KEY, JSON.stringify(songs));
 }
 
 export { SONGS_STORAGE_KEY };

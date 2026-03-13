@@ -1,4 +1,5 @@
 import { DarkTheme, ThemeProvider } from '@react-navigation/native';
+import { Feather } from '@expo/vector-icons';
 import {
   DMSans_400Regular,
   DMSans_600SemiBold,
@@ -6,13 +7,74 @@ import {
 } from '@expo-google-fonts/dm-sans';
 import { Lora_400Regular, useFonts as useLoraFonts } from '@expo-google-fonts/lora';
 import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Circle, Path } from 'react-native-svg';
 import 'react-native-reanimated';
 
 import { Palette, withOpacity } from '@/constants/theme';
+
+function LogoIcon({
+  width = 24,
+  height = 24,
+  color = Palette.accent,
+  style,
+}: {
+  width?: number;
+  height?: number;
+  color?: string;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return (
+    <Svg
+      fill="none"
+      height={height}
+      stroke={color}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      style={style}
+      viewBox="0 0 24 24"
+      width={width}>
+      <Path d="M9 18V5l12-2v13" />
+      <Path d="M9 9l12-2" />
+      <Circle cx={6} cy={18} r={3} />
+      <Circle cx={18} cy={16} r={3} />
+    </Svg>
+  );
+}
+
+function VinylRecord({ size, style }: { size: number; style?: StyleProp<ViewStyle> }) {
+  const cx = size / 2;
+  const cy = size / 2;
+  const grooveRadii = Array.from({ length: 16 }, (_, i) => 52 + i * 9);
+  return (
+    <View style={style}>
+      <Svg height={size} viewBox={`0 0 ${size} ${size}`} width={size}>
+        <Circle cx={cx} cy={cy} fill="none" r={cx - 4} stroke="#fff" strokeWidth={0.8} />
+        {grooveRadii.map((r) => (
+          <Circle key={r} cx={cx} cy={cy} fill="none" r={r} stroke="#fff" strokeWidth={0.4} />
+        ))}
+        <Circle cx={cx} cy={cy} fill="#fff" fillOpacity={0.05} r={44} stroke="#fff" strokeWidth={0.6} />
+        <Circle cx={cx} cy={cy} fill="#000" fillOpacity={0.6} r={7} />
+      </Svg>
+    </View>
+  );
+}
+
+function LogoHeader() {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      <LogoIcon width={28} height={28} color={Palette.accent} />
+      <Text style={{ fontFamily: 'DM-Sans-SemiBold', fontSize: 18, color: Palette.textPrimary }}>
+        LyricLoop
+      </Text>
+    </View>
+  );
+}
 
 // Resets on every cold app launch — does not persist across sessions
 let splashShown = false;
@@ -33,10 +95,9 @@ const LyricLoopTheme = {
 function LandingOverlay({ onComplete }: { onComplete: () => void }) {
   const insets = useSafeAreaInsets();
 
-  // Staged animation values
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const titleOpacity = useRef(new Animated.Value(0)).current;
-  const titleY = useRef(new Animated.Value(12)).current;
+  const titleY = useRef(new Animated.Value(14)).current;
   const ruleScaleX = useRef(new Animated.Value(0)).current;
   const taglineOpacity = useRef(new Animated.Value(0)).current;
   const buttonOpacity = useRef(new Animated.Value(0)).current;
@@ -45,7 +106,6 @@ function LandingOverlay({ onComplete }: { onComplete: () => void }) {
   useEffect(() => {
     splashShown = true;
 
-    // Sequential reveal: background → title rises → rule draws → tagline → button
     Animated.sequence([
       Animated.timing(overlayOpacity, { toValue: 1, duration: 500, useNativeDriver: true }),
       Animated.parallel([
@@ -72,33 +132,31 @@ function LandingOverlay({ onComplete }: { onComplete: () => void }) {
 
   return (
     <Animated.View style={[landing.container, { opacity: overlayOpacity }]}>
-      {/* Layered ambient glow — like candlelight filling the room */}
       <View style={landing.glowOuter} />
       <View style={landing.glowInner} />
+      <VinylRecord size={400} style={landing.vinyl} />
 
-      {/* Spacer — pushes content above the mathematical center */}
       <View style={landing.topSpacer} />
 
-      {/* Brand mark */}
+      <Animated.View style={{ opacity: titleOpacity, transform: [{ translateY: titleY }] }}>
+        <LogoIcon width={48} height={48} color={Palette.accent} style={landing.logo} />
+      </Animated.View>
+
       <Animated.Text
         style={[landing.title, { opacity: titleOpacity, transform: [{ translateY: titleY }] }]}>
         LyricLoop
       </Animated.Text>
 
-      {/* Rule — draws itself from center outward */}
       <Animated.View style={[landing.ruleWrap, { transform: [{ scaleX: ruleScaleX }] }]}>
         <View style={landing.rule} />
       </Animated.View>
 
-      {/* Tagline */}
       <Animated.Text style={[landing.tagline, { opacity: taglineOpacity }]}>
         your voice, your room.
       </Animated.Text>
 
-      {/* Spacer — larger below content so it sits above center */}
       <View style={landing.bottomSpacer} />
 
-      {/* CTA */}
       <Animated.View
         style={[landing.buttonWrap, { opacity: buttonOpacity, transform: [{ scale: buttonScale }] }]}>
         <Pressable onPress={handleEnter} style={landing.button}>
@@ -118,7 +176,6 @@ const landing = StyleSheet.create({
     backgroundColor: Palette.background,
     zIndex: 999,
   },
-  // Outer halo — very faint, large
   glowOuter: {
     backgroundColor: withOpacity(Palette.accent, 0.028),
     borderRadius: 380,
@@ -127,7 +184,6 @@ const landing = StyleSheet.create({
     top: '20%',
     width: 760,
   },
-  // Inner warmth — smaller, slightly more present
   glowInner: {
     backgroundColor: withOpacity(Palette.accent, 0.062),
     borderRadius: 200,
@@ -136,8 +192,19 @@ const landing = StyleSheet.create({
     top: '28%',
     width: 400,
   },
+  vinyl: {
+    height: 400,
+    opacity: 0.1,
+    position: 'absolute',
+    top: '28%',
+    width: 400,
+  },
   topSpacer: {
     flex: 1,
+  },
+  logo: {
+    marginBottom: 16,
+    marginTop: 48,
   },
   title: {
     color: Palette.textPrimary,
@@ -192,24 +259,53 @@ export default function RootLayout() {
   });
   const [loraLoaded] = useLoraFonts({ Lora: Lora_400Regular });
   const [showLanding, setShowLanding] = useState(!splashShown);
+  const fontsLoaded = dmSansLoaded && loraLoaded;
+
+  // Hide the native splash screen only once fonts are ready — prevents
+  // the white flash that occurs when the splash auto-hides before the
+  // JS bundle has rendered anything.
+  useEffect(() => {
+    if (fontsLoaded) {
+      void SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
 
   const handleLandingComplete = useCallback(() => {
     setShowLanding(false);
   }, []);
 
-  if (!dmSansLoaded || !loraLoaded) {
+  if (!fontsLoaded) {
+    // Splash screen is still visible — returning null here is safe.
     return null;
   }
 
   return (
     <ThemeProvider value={LyricLoopTheme}>
       <Stack
-        screenOptions={{
+        screenOptions={({ navigation }) => ({
           headerStyle: { backgroundColor: Palette.surface },
           headerTitleStyle: { fontFamily: 'DM-Sans-SemiBold', color: Palette.textPrimary },
           headerTintColor: Palette.accent,
-        }}>
-        <Stack.Screen name="index" options={{ title: 'LyricLoop' }} />
+          headerBackVisible: false,
+          headerBackTitleVisible: false,
+          // Fade matches the spec ("fading feels like the scene changing")
+          // and avoids any background-color mismatch flash seen with slides.
+          animation: 'fade',
+          animationDuration: 200,
+          // Fill the content area with the app background during transitions
+          // so the brief translucent frame between screens never shows white.
+          contentStyle: { backgroundColor: Palette.background },
+          headerLeft: ({ canGoBack }) =>
+            canGoBack ? (
+              <Pressable
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 16 }}
+                onPress={() => navigation.goBack()}
+                style={{ marginLeft: 4, padding: 4 }}>
+                <Feather color={Palette.accent} name="chevron-left" size={26} />
+              </Pressable>
+            ) : null,
+        })}>
+        <Stack.Screen name="index" options={{ headerTitle: () => <LogoHeader /> }} />
         <Stack.Screen name="song/new" options={{ title: 'New Song' }} />
         <Stack.Screen name="song/[id]" options={{ title: 'Edit Song' }} />
         <Stack.Screen name="song/record/[id]" options={{ headerShown: false }} />
