@@ -204,14 +204,14 @@ export function SongEditorScreen({ songId }: SongEditorScreenProps) {
   const hasLyrics = lyrics.trim().length > 0;
   const bottomInset = Math.max(insets.bottom, 16);
 
-  const pencilButton = (
+  const headerRight = isEditing ? (
     <Pressable
-      hitSlop={{ top: 8, bottom: 8, left: 12, right: 4 }}
-      onPress={() => lyricsRef.current?.focus()}
+      hitSlop={{ top: 8, bottom: 8, left: 16, right: 8 }}
+      onPress={() => Keyboard.dismiss()}
       style={styles.headerPencil}>
-      <Feather color={Palette.accent} name="edit-2" size={17} />
+      <Text style={styles.headerDoneLabel}>Done</Text>
     </Pressable>
-  );
+  ) : null;
 
   if (isLoading) {
     return (
@@ -234,9 +234,10 @@ export function SongEditorScreen({ songId }: SongEditorScreenProps) {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior="padding"
+      keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 44 : 0}
       style={styles.container}>
-      <Stack.Screen options={{ title: name.trim() || 'New Song', headerRight: () => pencilButton }} />
+      <Stack.Screen options={{ title: name.trim() || 'New Song', headerRight: () => headerRight }} />
 
       {/* Song name */}
       <TextInput
@@ -283,17 +284,6 @@ export function SongEditorScreen({ songId }: SongEditorScreenProps) {
         </Animated.View>
       </View>
 
-      {/* Done bar — visible when keyboard is up */}
-      {isEditing && (
-        <View style={styles.doneBar}>
-          <Pressable
-            hitSlop={{ top: 8, bottom: 8, left: 16, right: 16 }}
-            onPress={() => Keyboard.dismiss()}
-            style={styles.doneButtonPressable}>
-            <Text style={styles.doneButtonLabel}>Done</Text>
-          </Pressable>
-        </View>
-      )}
 
       {/* Last take mini-player — only when a recording exists */}
       {lastRecording && !isEditing && (
@@ -316,7 +306,7 @@ export function SongEditorScreen({ songId }: SongEditorScreenProps) {
       <View
         style={[
           styles.recordCtaWrap,
-          { paddingBottom: isEditing ? 10 : bottomInset + 10 },
+          { paddingBottom: bottomInset + 10 },
         ]}>
         <Pressable
           disabled={!hasLyrics}
@@ -395,17 +385,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     lineHeight: 37,
   },
-  doneBar: {
-    alignItems: 'flex-end',
-    borderTopColor: Palette.border,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-  },
-  doneButtonPressable: {
-    paddingHorizontal: 4,
-  },
-  doneButtonLabel: {
+  headerDoneLabel: {
     color: Palette.accent,
     fontFamily: 'DM-Sans-SemiBold',
     fontSize: 16,
