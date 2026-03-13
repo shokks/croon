@@ -125,4 +125,4 @@ Each parent task follows this lifecycle:
   - [x] 7.6 Fix any layout issues on small screens (iPhone SE) and confirm lyrics are readable in low light (~20 min)
   - [x] 7.7 Verify all PRD success metrics: 3 flows completed without confusion, Spotify stays active, saved song reopens correctly, share works end-to-end (~15 min)
   - [x] 7.8 Get user approval
-  - [ ] 7.9 Commit changes, merge `feature/7-e2e-validation` to `main`, delete branch (~10 min)
+  - [x] 7.9 Commit changes, merge `feature/7-e2e-validation` to `main`, delete branch (~10 min)
