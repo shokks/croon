@@ -306,6 +306,7 @@ export default function RootLayout() {
             ) : null,
         })}>
         <Stack.Screen name="index" options={{ headerTitle: () => <LogoHeader /> }} />
+        <Stack.Screen name="song/search" options={{ title: 'Find a Song' }} />
         <Stack.Screen name="song/new" options={{ title: 'New Song' }} />
         <Stack.Screen name="song/[id]" options={{ title: 'Edit Song' }} />
         <Stack.Screen name="song/record/[id]" options={{ headerShown: false }} />

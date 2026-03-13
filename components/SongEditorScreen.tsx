@@ -23,6 +23,11 @@ import type { ScrollSpeed, SongRecording } from '@/types';
 
 type SongEditorScreenProps = {
   songId?: string;
+  prefillName?: string;
+  prefillLyrics?: string;
+  lyricsSource?: 'lrclib' | 'manual';
+  prefillSyncedLyrics?: string;
+  prefillArtworkUrl?: string;
 };
 
 function formatDuration(ms: number): string {
@@ -32,7 +37,14 @@ function formatDuration(ms: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-export function SongEditorScreen({ songId }: SongEditorScreenProps) {
+export function SongEditorScreen({
+  songId,
+  prefillName,
+  prefillLyrics,
+  lyricsSource,
+  prefillSyncedLyrics,
+  prefillArtworkUrl,
+}: SongEditorScreenProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -60,13 +72,34 @@ export function SongEditorScreen({ songId }: SongEditorScreenProps) {
   // True once an existing song has finished loading (new songs start true)
   const isLoadedRef = useRef(!songId);
 
+  // Prefill support (new songs from search)
+  const syncedLyricsRef = useRef<string | null>(prefillSyncedLyrics?.trim() || null);
+  const artworkUrlRef = useRef<string | null>(prefillArtworkUrl?.trim() || null);
+  const [isPrefilled, setIsPrefilled] = useState(
+    lyricsSource === 'lrclib' && Boolean(prefillLyrics?.trim())
+  );
+
   // 0 = preview mode, 1 = edit mode
   const modeAnim = useRef(new Animated.Value(0)).current;
 
-  // Load existing song
+  // Load existing song (or apply prefill for new songs)
   useEffect(() => {
     if (!songId) {
+      if (prefillName?.trim()) {
+        setName(prefillName.trim());
+        nameRef.current = prefillName.trim();
+      }
+      if (prefillLyrics?.trim()) {
+        setLyrics(prefillLyrics.trim());
+        lyricsValueRef.current = prefillLyrics.trim();
+      }
       setIsLoading(false);
+      // If we have prefill data, save immediately so the library reflects it
+      // the moment the user navigates back — avoids a race with useFocusEffect cleanup.
+      if (prefillName?.trim() || prefillLyrics?.trim()) {
+        createdAtRef.current = new Date().toISOString();
+        void doSave();
+      }
       return;
     }
 
@@ -94,6 +127,8 @@ export function SongEditorScreen({ songId }: SongEditorScreenProps) {
       lastRecordingRef.current = song.recording ?? null;
       createdAtRef.current = song.createdAt;
       stableSongId.current = song.id;
+      artworkUrlRef.current = song.artworkUrl ?? null;
+      syncedLyricsRef.current = song.syncedLyrics ?? null;
       isLoadedRef.current = true;
       setIsLoading(false);
     })();
@@ -101,6 +136,7 @@ export function SongEditorScreen({ songId }: SongEditorScreenProps) {
     return () => {
       mounted = false;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- prefill props are stable after mount; doSave is a stable callback
   }, [songId]);
 
   // Keyboard mode transitions
@@ -159,6 +195,8 @@ export function SongEditorScreen({ songId }: SongEditorScreenProps) {
       scrollSpeed: scrollSpeedRef.current,
       createdAt: createdAtRef.current,
       recording: lastRecordingRef.current ?? undefined,
+      syncedLyrics: syncedLyricsRef.current ?? undefined,
+      artworkUrl: artworkUrlRef.current ?? undefined,
     });
   }, []);
 
@@ -187,6 +225,7 @@ export function SongEditorScreen({ songId }: SongEditorScreenProps) {
   const handleLyricsChange = (text: string) => {
     setLyrics(text);
     lyricsValueRef.current = text;
+    if (isPrefilled) setIsPrefilled(false);
     scheduleSave();
   };
 
@@ -284,6 +323,11 @@ export function SongEditorScreen({ songId }: SongEditorScreenProps) {
         </Animated.View>
       </View>
 
+
+      {/* LRCLIB helper */}
+      {isPrefilled && (
+        <Text style={styles.prefillHelper}>Lyrics auto-filled — tap to edit.</Text>
+      )}
 
       {/* Last take mini-player — only when a recording exists */}
       {lastRecording && !isEditing && (
@@ -447,5 +491,12 @@ const styles = StyleSheet.create({
   },
   headerPencil: {
     padding: 4,
+  },
+  prefillHelper: {
+    color: Palette.textDisabled,
+    fontFamily: 'DM-Sans',
+    fontSize: 13,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
   },
 });

@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
-import { type Href, Stack, useRouter } from 'expo-router';
+import { type Href, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, FlatList, ImageBackground, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -63,7 +63,7 @@ export default function LibraryScreen() {
 
     if (songs.length === 0) {
       hasAutoRedirectedRef.current = true;
-      router.push('/song/new' as Href);
+      router.push('/song/search' as Href);
     }
   }, [isLoading, router, songs.length]);
 
@@ -88,6 +88,7 @@ export default function LibraryScreen() {
   );
 
   const fabBottom = Math.max(insets.bottom + 16, 32);
+  const heroSong = songs[0];
 
   return (
     <View style={styles.container}>
@@ -98,6 +99,28 @@ export default function LibraryScreen() {
         ]}
         data={songs}
         keyExtractor={(item) => item.id}
+        ListHeaderComponent={
+          heroSong ? (
+            <Pressable onPress={() => handleOpenSong(heroSong.id)} style={styles.heroCard}>
+              <ImageBackground
+                imageStyle={styles.heroImage}
+                source={{ uri: heroSong.artworkUrl }}
+                style={styles.heroArtwork}>
+                <View style={styles.heroOverlay}>
+                  <Text numberOfLines={1} style={styles.heroEyebrow}>
+                    Featured
+                  </Text>
+                  <Text numberOfLines={1} style={styles.heroTitle}>
+                    {heroSong.name || 'Untitled song'}
+                  </Text>
+                  <Text numberOfLines={1} style={styles.heroMeta}>
+                    Tap to open
+                  </Text>
+                </View>
+              </ImageBackground>
+            </Pressable>
+          ) : null
+        }
         ListEmptyComponent={
           isLoading ? null : (
             <View style={styles.emptyContent}>
@@ -109,6 +132,7 @@ export default function LibraryScreen() {
             </View>
           )
         }
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
         renderItem={({ item, index }) => (
           <AnimatedSongItem
             index={index}
@@ -122,7 +146,7 @@ export default function LibraryScreen() {
       <Pressable
         accessibilityLabel="Create a new song"
         accessibilityRole="button"
-        onPress={() => router.push('/song/new' as Href)}
+        onPress={() => router.push('/song/search' as Href)}
         style={[styles.fab, { bottom: fabBottom }]}>
         <Feather color={Palette.background} name="plus" size={26} />
       </Pressable>
@@ -136,8 +160,50 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listContent: {
+    paddingHorizontal: 20,
+    paddingTop: 14,
+  },
+  heroCard: {
+    borderRadius: 18,
+    marginBottom: 18,
+    overflow: 'hidden',
+  },
+  heroArtwork: {
+    height: 190,
+    justifyContent: 'flex-end',
+    width: '100%',
+  },
+  heroImage: {
+    borderRadius: 18,
+  },
+  heroOverlay: {
+    backgroundColor: 'rgba(0,0,0,0.32)',
+    gap: 2,
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingVertical: 14,
+  },
+  heroEyebrow: {
+    color: '#D7CFF2',
+    fontFamily: 'DM-Sans-SemiBold',
+    fontSize: 12,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  heroTitle: {
+    color: Palette.textPrimary,
+    fontFamily: 'DM-Sans-SemiBold',
+    fontSize: 20,
+    lineHeight: 26,
+  },
+  heroMeta: {
+    color: '#D0CED7',
+    fontFamily: 'DM-Sans',
+    fontSize: 13,
+  },
+  separator: {
+    backgroundColor: Palette.border,
+    height: StyleSheet.hairlineWidth,
+    marginLeft: 70, // inset to align with text, not artwork edge
   },
   emptyContainer: {
     flexGrow: 1,

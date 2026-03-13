@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -10,7 +10,8 @@ import { RecordButton } from '@/components/RecordButton';
 import { Palette } from '@/constants/theme';
 import { useRecording } from '@/lib/useRecording';
 import { getSongs, saveRecording, saveSong } from '@/lib/storage';
-import type { ScrollSpeed, Song } from '@/types';
+import { parseSyncedLyrics } from '@/lib/lyricsSync';
+import type { ScrollSpeed, Song, SyncedLyricLine } from '@/types';
 
 type RecordingScreenProps = {
   songId: string;
@@ -18,9 +19,9 @@ type RecordingScreenProps = {
 };
 
 const SPEED_OPTIONS: { label: string; value: ScrollSpeed }[] = [
-  { label: 'Slow', value: 'slow' },
-  { label: 'Med', value: 'medium' },
-  { label: 'Fast', value: 'fast' },
+  { label: 'Ballad', value: 'slow' },
+  { label: 'Normal', value: 'medium' },
+  { label: 'Uptempo', value: 'fast' },
 ];
 
 function formatTime(seconds: number): string {
@@ -53,6 +54,7 @@ export function RecordingScreen({ reviewMode = false, songId }: RecordingScreenP
   const [songName, setSongName] = useState('');
   const [lyrics, setLyrics] = useState('');
   const [scrollSpeed, setScrollSpeed] = useState<ScrollSpeed>('medium');
+  const [syncedLyrics, setSyncedLyrics] = useState<string | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [reviewUri, setReviewUri] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -69,6 +71,7 @@ export function RecordingScreen({ reviewMode = false, songId }: RecordingScreenP
       setSongName(song.name);
       setLyrics(song.lyrics);
       setScrollSpeed(song.scrollSpeed);
+      setSyncedLyrics(song.syncedLyrics ?? null);
       songRef.current = song;
       if (reviewMode && song.recording?.uri) {
         setReviewUri(song.recording.uri);
@@ -120,6 +123,8 @@ export function RecordingScreen({ reviewMode = false, songId }: RecordingScreenP
   const handleEdit = useCallback(() => {
     router.replace(`/song/${songId}` as Parameters<typeof router.replace>[0]);
   }, [router, songId]);
+
+  const syncedLines = useMemo<SyncedLyricLine[]>(() => parseSyncedLyrics(syncedLyrics), [syncedLyrics]);
 
   const bottomInset = Math.max(insets.bottom, 16);
 
@@ -198,7 +203,12 @@ export function RecordingScreen({ reviewMode = false, songId }: RecordingScreenP
     return (
       <View style={styles.container}>
         <Stack.Screen options={{ headerShown: false }} />
-        <LyricsScrollView lyrics={lyrics} scrollSpeed={scrollSpeed} />
+        <LyricsScrollView
+          lyrics={lyrics}
+          scrollSpeed={scrollSpeed}
+          syncedLines={syncedLines.length > 0 ? syncedLines : undefined}
+          currentMs={syncedLines.length > 0 ? elapsedSeconds * 1000 : undefined}
+        />
         <AudioActivityBar />
         <View style={[styles.recordArea, { paddingBottom: bottomInset }]}>
           <Text style={styles.timer}>{formatTime(elapsedSeconds)}</Text>

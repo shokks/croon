@@ -15,4 +15,27 @@ export type Song = {
   scrollSpeed: ScrollSpeed;
   createdAt: string;
   recording?: SongRecording;
+  syncedLyrics?: string | null;
+  artworkUrl?: string;
+};
+
+export type SongSearchResult = {
+  id: number;
+  title: string;
+  artist: string;
+  album: string;
+  artworkUrl: string;
+  previewUrl: string | null;
+  durationMs: number;
+};
+
+export type LyricsLookupResult = {
+  plainLyrics: string | null;
+  syncedLyrics: string | null;
+  source: 'lrclib' | 'manual';
+};
+
+export type SyncedLyricLine = {
+  ms: number;
+  text: string;
 };

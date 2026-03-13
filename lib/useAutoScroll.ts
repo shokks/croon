@@ -1,210 +1,116 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { LayoutChangeEvent, NativeSyntheticEvent, NativeScrollEvent, ScrollView } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { ScrollSpeed } from '@/types';
 
-const WPM_BY_SPEED: Record<ScrollSpeed, number> = {
-  fast: 300,
-  medium: 220,
-  slow: 150,
+// ms between line advances — tuned to feel like musical beats
+const INTERVAL_MS: Record<ScrollSpeed, number> = {
+  slow: 6000,    // Ballad ~80 BPM
+  medium: 4000,  // Normal ~100 BPM
+  fast: 2500,    // Uptempo ~130 BPM
 };
-
-const MIN_DURATION_BY_SPEED: Record<ScrollSpeed, number> = {
-  fast: 900,
-  medium: 1300,
-  slow: 1800,
-};
-
-const GLOBAL_PACE_FACTOR = 0.4;
 
 type UseAutoScrollOptions = {
-  lyrics: string;
+  linesCount: number;
   scrollSpeed: ScrollSpeed;
 };
 
-export function useAutoScroll({ lyrics, scrollSpeed }: UseAutoScrollOptions) {
-  const scrollViewRef = useRef<ScrollView>(null);
-  const contentHeightRef = useRef(0);
-  const viewportHeightRef = useRef(0);
-  const currentOffsetRef = useRef(0);
-  const startOffsetRef = useRef(0);
-  const targetOffsetRef = useRef(0);
-  const durationRef = useRef(0);
-  const animationFrameRef = useRef<number | null>(null);
-  const startedAtRef = useRef<number | null>(null);
-  const elapsedAtPauseRef = useRef(0);
-  const pausedRef = useRef(false);
-  const scrollingRef = useRef(false);
-
+export function useAutoScroll({ linesCount, scrollSpeed }: UseAutoScrollOptions) {
+  const [currentLineIndex, setCurrentLineIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
 
-  const estimatedDurationMs = useMemo(() => {
-    const characterCount = Math.max(1, lyrics.trim().length);
-    const estimatedWords = Math.max(1, Math.ceil(characterCount / 5));
-    const wpm = WPM_BY_SPEED[scrollSpeed];
-    const readingDurationMs = Math.round((estimatedWords / wpm) * 60_000);
-    const tunedDurationMs = Math.round(readingDurationMs * GLOBAL_PACE_FACTOR);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const currentIndexRef = useRef(0);
+  const isScrollingRef = useRef(false);
+  const isPausedRef = useRef(false);
 
-    return Math.max(MIN_DURATION_BY_SPEED[scrollSpeed], tunedDurationMs);
-  }, [lyrics, scrollSpeed]);
-
-  const getMaxOffset = useCallback(() => {
-    return Math.max(contentHeightRef.current - viewportHeightRef.current, 0);
-  }, []);
-
-  const stopAnimation = useCallback(() => {
-    if (animationFrameRef.current !== null) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
+  const stopInterval = useCallback(() => {
+    if (intervalRef.current !== null) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
   }, []);
 
-  const animateStep = useCallback(
-    (timestamp: number) => {
-      if (pausedRef.current || !scrollingRef.current) {
-        return;
-      }
+  const scheduleInterval = useCallback(
+    (interval: number, count: number) => {
+      intervalRef.current = setInterval(() => {
+        const next = currentIndexRef.current + 1;
+        currentIndexRef.current = next;
+        setCurrentLineIndex(next);
 
-      if (startedAtRef.current === null) {
-        startedAtRef.current = timestamp;
-      }
-
-      const elapsed = elapsedAtPauseRef.current + (timestamp - startedAtRef.current);
-      const progress = Math.min(elapsed / durationRef.current, 1);
-
-      const nextOffset =
-        startOffsetRef.current + (targetOffsetRef.current - startOffsetRef.current) * progress;
-
-      currentOffsetRef.current = nextOffset;
-      scrollViewRef.current?.scrollTo({ animated: false, y: nextOffset });
-
-      if (progress >= 1) {
-        scrollingRef.current = false;
-        pausedRef.current = false;
-        setIsPaused(false);
-        setIsScrolling(false);
-        stopAnimation();
-        return;
-      }
-
-      animationFrameRef.current = requestAnimationFrame(animateStep);
+        if (next >= count - 1) {
+          clearInterval(intervalRef.current!);
+          intervalRef.current = null;
+          isScrollingRef.current = false;
+          setIsScrolling(false);
+        }
+      }, interval);
     },
-    [stopAnimation]
+    []
   );
 
-  const startScroll = useCallback(
-    (durationMs?: number) => {
-      const maxOffset = getMaxOffset();
-      const remainingDistance = Math.max(maxOffset - currentOffsetRef.current, 0);
+  const startScroll = useCallback(() => {
+    if (isScrollingRef.current) return false;
+    if (linesCount === 0) return false;
+    if (currentIndexRef.current >= linesCount - 1) return false;
 
-      if (remainingDistance === 0) {
-        return false;
-      }
+    isScrollingRef.current = true;
+    isPausedRef.current = false;
+    setIsScrolling(true);
+    setIsPaused(false);
 
-      const fullDistance = Math.max(maxOffset, 1);
-      const effectiveDuration =
-        durationMs ?? Math.max(1000, Math.round(estimatedDurationMs * (remainingDistance / fullDistance)));
-
-      stopAnimation();
-      pausedRef.current = false;
-      scrollingRef.current = true;
-      setIsPaused(false);
-      setIsScrolling(true);
-
-      startOffsetRef.current = currentOffsetRef.current;
-      targetOffsetRef.current = maxOffset;
-      durationRef.current = effectiveDuration;
-      elapsedAtPauseRef.current = 0;
-      startedAtRef.current = null;
-
-      animationFrameRef.current = requestAnimationFrame(animateStep);
-      return true;
-    },
-    [animateStep, estimatedDurationMs, getMaxOffset, stopAnimation]
-  );
+    scheduleInterval(INTERVAL_MS[scrollSpeed], linesCount);
+    return true;
+  }, [linesCount, scheduleInterval, scrollSpeed]);
 
   const pauseScroll = useCallback(() => {
-    if (!scrollingRef.current || pausedRef.current) {
-      return;
-    }
-
-    pausedRef.current = true;
-    setIsPaused(true);
+    if (!isScrollingRef.current || isPausedRef.current) return;
+    stopInterval();
+    isScrollingRef.current = false;
+    isPausedRef.current = true;
     setIsScrolling(false);
-
-    if (startedAtRef.current !== null) {
-      elapsedAtPauseRef.current += performance.now() - startedAtRef.current;
-    }
-
-    stopAnimation();
-  }, [stopAnimation]);
+    setIsPaused(true);
+  }, [stopInterval]);
 
   const resumeScroll = useCallback(() => {
-    if (!pausedRef.current) {
-      return;
-    }
-
-    pausedRef.current = false;
-    scrollingRef.current = true;
-    startedAtRef.current = null;
-    setIsPaused(false);
+    if (!isPausedRef.current) return;
+    if (currentIndexRef.current >= linesCount - 1) return;
+    isScrollingRef.current = true;
+    isPausedRef.current = false;
     setIsScrolling(true);
-
-    animationFrameRef.current = requestAnimationFrame(animateStep);
-  }, [animateStep]);
+    setIsPaused(false);
+    scheduleInterval(INTERVAL_MS[scrollSpeed], linesCount);
+  }, [linesCount, scheduleInterval, scrollSpeed]);
 
   const resetScroll = useCallback(() => {
-    stopAnimation();
-    pausedRef.current = false;
-    scrollingRef.current = false;
-    setIsPaused(false);
+    stopInterval();
+    isScrollingRef.current = false;
+    isPausedRef.current = false;
+    currentIndexRef.current = 0;
+    setCurrentLineIndex(0);
     setIsScrolling(false);
-    currentOffsetRef.current = 0;
-    elapsedAtPauseRef.current = 0;
-    startedAtRef.current = null;
-    scrollViewRef.current?.scrollTo({ animated: false, y: 0 });
-  }, [stopAnimation]);
+    setIsPaused(false);
+  }, [stopInterval]);
 
   const stopScroll = useCallback(() => {
-    stopAnimation();
-    pausedRef.current = false;
-    scrollingRef.current = false;
-    setIsPaused(false);
+    stopInterval();
+    isScrollingRef.current = false;
+    isPausedRef.current = false;
     setIsScrolling(false);
-    elapsedAtPauseRef.current = 0;
-    startedAtRef.current = null;
-  }, [stopAnimation]);
+    setIsPaused(false);
+  }, [stopInterval]);
 
   useEffect(() => {
-    return () => {
-      stopAnimation();
-    };
-  }, [stopAnimation]);
-
-  const onLayout = useCallback((event: LayoutChangeEvent) => {
-    viewportHeightRef.current = event.nativeEvent.layout.height;
-  }, []);
-
-  const onContentSizeChange = useCallback((_width: number, height: number) => {
-    contentHeightRef.current = height;
-  }, []);
-
-  const onScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    currentOffsetRef.current = event.nativeEvent.contentOffset.y;
-  }, []);
+    return () => stopInterval();
+  }, [stopInterval]);
 
   return {
-    estimatedDurationMs,
+    currentLineIndex,
     isPaused,
     isScrolling,
-    onContentSizeChange,
-    onLayout,
-    onScroll,
     pauseScroll,
     resetScroll,
     resumeScroll,
-    scrollViewRef,
     startScroll,
     stopScroll,
   };
