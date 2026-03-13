@@ -10,9 +10,9 @@ type SpeedSliderProps = {
 };
 
 const SPEED_OPTIONS: { label: string; value: ScrollSpeed }[] = [
-  { label: 'Slow', value: 'slow' },
-  { label: 'Medium', value: 'medium' },
-  { label: 'Fast', value: 'fast' },
+  { label: 'Ballad', value: 'slow' },
+  { label: 'Normal', value: 'medium' },
+  { label: 'Uptempo', value: 'fast' },
 ];
 
 export function SpeedSlider({ value, onChange }: SpeedSliderProps) {

@@ -33,10 +33,16 @@ function normalizeSongs(value: unknown): Song[] {
       typeof candidate.createdAt === 'string'
     );
   }).map((item) => {
-    const candidate = item as Song & { recording?: unknown };
+    const candidate = item as Song & { recording?: unknown; syncedLyrics?: unknown; artworkUrl?: unknown };
     return {
       ...candidate,
       recording: normalizeRecording(candidate.recording),
+      syncedLyrics: typeof candidate.syncedLyrics === 'string'
+        ? candidate.syncedLyrics
+        : undefined,
+      artworkUrl: typeof candidate.artworkUrl === 'string'
+        ? candidate.artworkUrl
+        : undefined,
     };
   });
 }

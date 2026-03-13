@@ -63,7 +63,7 @@ export default function LibraryScreen() {
 
     if (songs.length === 0) {
       hasAutoRedirectedRef.current = true;
-      router.push('/song/new' as Href);
+      router.push('/song/search' as Href);
     }
   }, [isLoading, router, songs.length]);
 
@@ -109,6 +109,7 @@ export default function LibraryScreen() {
             </View>
           )
         }
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
         renderItem={({ item, index }) => (
           <AnimatedSongItem
             index={index}
@@ -122,7 +123,7 @@ export default function LibraryScreen() {
       <Pressable
         accessibilityLabel="Create a new song"
         accessibilityRole="button"
-        onPress={() => router.push('/song/new' as Href)}
+        onPress={() => router.push('/song/search' as Href)}
         style={[styles.fab, { bottom: fabBottom }]}>
         <Feather color={Palette.background} name="plus" size={26} />
       </Pressable>
@@ -136,8 +137,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listContent: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingHorizontal: 20,
+    paddingTop: 8,
+  },
+  separator: {
+    backgroundColor: Palette.border,
+    height: StyleSheet.hairlineWidth,
+    marginLeft: 70, // inset to align with text, not artwork edge
   },
   emptyContainer: {
     flexGrow: 1,
