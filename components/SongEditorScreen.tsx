@@ -299,7 +299,11 @@ export function SongEditorScreen({
   }, [router]);
 
   const handleOpenProvider = useCallback((provider: MusicProvider) => {
-    void openExternalMusicLink(provider, { externalLinks: externalLinksRef.current ?? undefined } as Parameters<typeof openExternalMusicLink>[1]).then(({ opened }) => {
+    void openExternalMusicLink(provider, {
+      externalLinks: externalLinksRef.current ?? undefined,
+      name: nameRef.current,
+      artist: artistRef.current,
+    } as Parameters<typeof openExternalMusicLink>[1]).then(({ opened }) => {
       if (!opened) Alert.alert('Link not available for this song.');
     });
   }, []);

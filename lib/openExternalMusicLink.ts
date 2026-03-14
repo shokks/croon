@@ -41,9 +41,21 @@ export async function openExternalMusicLink(
     }
 
     if (provider === 'youtube') {
-      const url = links.youtube?.url;
-      if (!url) return { opened: false };
-      await Linking.openURL(url);
+      if (!links.youtube) return { opened: false };
+      // Always reconstruct the YouTube URL from the song's name + artist fields.
+      // The stored url can be corrupted (& in artist names truncates it during
+      // Expo Router param serialisation). Song.name and Song.artist are always safe.
+      const ytArtist = (song.artist ?? '')
+        .split(',')[0]
+        .replace(/\s*&\s*/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      const ytTitle = (song.name ?? '').trim();
+      const ytQuery = [ytArtist, ytTitle].filter(Boolean).join(' ');
+      if (!ytQuery) return { opened: false };
+      await Linking.openURL(
+        `https://www.youtube.com/results?search_query=${encodeURIComponent(ytQuery)}`
+      );
       return { opened: true };
     }
 

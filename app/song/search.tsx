@@ -37,14 +37,20 @@ export default function SongSearchScreen() {
     const controller = new AbortController();
     abortRef.current = controller;
 
-    const q = `${track.artist} ${track.title}`;
+    const artist = (track.artist ?? '').trim();
+    const title = (track.title ?? '').trim();
+    const q = [artist, title].filter(Boolean).join(' ');
+    // YouTube: use only the first listed artist and strip & to avoid %26 being
+    // misinterpreted as a URL parameter separator by native URL handlers
+    const ytArtist = artist.split(',')[0].replace(/\s*&\s*/g, ' ').replace(/\s+/g, ' ').trim();
+    const ytQuery = [ytArtist, title].filter(Boolean).join(' ');
     const externalLinks = JSON.stringify({
       spotify: {
         uri: `spotify:search:${encodeURIComponent(q)}`,
         url: `https://open.spotify.com/search/${encodeURIComponent(q)}`,
       },
       appleMusic: track.appleMusicUrl ? { url: track.appleMusicUrl } : undefined,
-      youtube: { url: `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}` },
+      youtube: { url: `https://www.youtube.com/results?search_query=${encodeURIComponent(ytQuery)}` },
     });
 
     try {

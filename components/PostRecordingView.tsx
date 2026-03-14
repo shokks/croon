@@ -200,10 +200,14 @@ export function PostRecordingView({
   }, [initialDurationMs, onBack, player, playerStatus.duration, recordingUri, webDuration]);
 
   const handleOpenProvider = useCallback((provider: MusicProvider) => {
-    void openExternalMusicLink(provider, { externalLinks } as Parameters<typeof openExternalMusicLink>[1]).then(({ opened }) => {
+    void openExternalMusicLink(provider, {
+      externalLinks,
+      name: songName,
+      artist: songArtist,
+    } as Parameters<typeof openExternalMusicLink>[1]).then(({ opened }) => {
       if (!opened) Alert.alert('Link not available for this song.');
     });
-  }, [externalLinks]);
+  }, [externalLinks, songName, songArtist]);
 
   const isPlaying = Platform.OS === 'web' ? isWebPlaying : playerStatus.playing;
   const playerDuration = Platform.OS === 'web' ? webDuration : playerStatus.duration;

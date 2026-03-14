@@ -8,6 +8,7 @@ import {
 import { Lora_400Regular, useFonts as useLoraFonts } from '@expo-google-fonts/lora';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import * as SystemUI from 'expo-system-ui';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
@@ -16,6 +17,11 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import 'react-native-reanimated';
 
 import { Palette, withOpacity } from '@/constants/theme';
+
+// Paint the native root window dark before any screen renders — this
+// eliminates the white flash that appears during navigation transitions
+// when the OS-level background bleeds through semi-transparent screens.
+void SystemUI.setBackgroundColorAsync(Palette.background);
 
 function LogoIcon({
   width = 24,
@@ -288,12 +294,9 @@ export default function RootLayout() {
           headerTintColor: Palette.accent,
           headerBackVisible: false,
           headerBackTitleVisible: false,
-          // Fade matches the spec ("fading feels like the scene changing")
-          // and avoids any background-color mismatch flash seen with slides.
-          animation: 'fade',
-          animationDuration: 200,
-          // Fill the content area with the app background during transitions
-          // so the brief translucent frame between screens never shows white.
+          // Slide from right on push, slide back from left on pop — standard native nav.
+          // Combined with setBackgroundColorAsync above this ensures no white flash.
+          animation: 'slide_from_right',
           contentStyle: { backgroundColor: Palette.background },
           headerLeft: ({ canGoBack }) =>
             canGoBack ? (
