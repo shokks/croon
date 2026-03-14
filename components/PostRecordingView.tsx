@@ -1,11 +1,23 @@
-import { Feather } from '@expo/vector-icons';
+import { Feather, FontAwesome5 } from '@expo/vector-icons';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import * as Sharing from 'expo-sharing';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { LayoutChangeEvent, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Alert,
+  ImageBackground,
+  LayoutChangeEvent,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Palette, withOpacity } from '@/constants/theme';
+import { openExternalMusicLink, type MusicProvider } from '@/lib/openExternalMusicLink';
+import type { ExternalSongLinks } from '@/types';
 
 type PostRecordingViewProps = {
   recordingUri: string | null;
@@ -17,6 +29,8 @@ type PostRecordingViewProps = {
   lyrics?: string;
   initialDurationMs?: number;
   recordedAt?: string;
+  artworkUrl?: string;
+  externalLinks?: ExternalSongLinks;
 };
 
 function formatDuration(seconds: number): string {
@@ -46,7 +60,25 @@ function buildWaveform(): number[] {
   });
 }
 
-export function PostRecordingView({ initialDurationMs, lyrics, onBack, onEdit, onReRecord, recordedAt, recordingUri, songArtist, songName }: PostRecordingViewProps) {
+const PROVIDER_BUTTONS: { provider: MusicProvider; icon: string; color: string }[] = [
+  { provider: 'spotify', icon: 'spotify', color: '#1DB954' },
+  { provider: 'appleMusic', icon: 'apple', color: '#FA2D48' },
+  { provider: 'youtube', icon: 'youtube', color: '#FF0000' },
+];
+
+export function PostRecordingView({
+  artworkUrl,
+  externalLinks,
+  initialDurationMs,
+  lyrics,
+  onBack,
+  onEdit,
+  onReRecord,
+  recordedAt,
+  recordingUri,
+  songArtist,
+  songName,
+}: PostRecordingViewProps) {
   const insets = useSafeAreaInsets();
   const player = useAudioPlayer();
   const playerStatus = useAudioPlayerStatus(player);
@@ -67,9 +99,7 @@ export function PostRecordingView({ initialDurationMs, lyrics, onBack, onEdit, o
   }, [player, recordingUri]);
 
   useEffect(() => {
-    if (Platform.OS !== 'web') {
-      return;
-    }
+    if (Platform.OS !== 'web') return;
 
     setIsWebPlaying(false);
     setWebDuration(0);
@@ -81,28 +111,17 @@ export function PostRecordingView({ initialDurationMs, lyrics, onBack, onEdit, o
       webAudioRef.current = null;
     }
 
-    if (!recordingUri) {
-      return;
-    }
+    if (!recordingUri) return;
 
     const audio = new Audio(recordingUri);
     audio.preload = 'auto';
 
-    const onLoadedMetadata = () => {
-      setWebDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
-    };
-    const onTimeUpdate = () => {
-      setWebCurrentTime(audio.currentTime || 0);
-    };
+    const onLoadedMetadata = () => setWebDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
+    const onTimeUpdate = () => setWebCurrentTime(audio.currentTime || 0);
     const onPlay = () => setIsWebPlaying(true);
     const onPause = () => setIsWebPlaying(false);
-    const onEnded = () => {
-      setIsWebPlaying(false);
-      setWebCurrentTime(0);
-    };
-    const onError = () => {
-      setWebCanPlay(false);
-    };
+    const onEnded = () => { setIsWebPlaying(false); setWebCurrentTime(0); };
+    const onError = () => setWebCanPlay(false);
 
     audio.addEventListener('loadedmetadata', onLoadedMetadata);
     audio.addEventListener('timeupdate', onTimeUpdate);
@@ -111,7 +130,6 @@ export function PostRecordingView({ initialDurationMs, lyrics, onBack, onEdit, o
     audio.addEventListener('ended', onEnded);
     audio.addEventListener('error', onError);
     audio.load();
-
     webAudioRef.current = audio;
 
     return () => {
@@ -122,10 +140,7 @@ export function PostRecordingView({ initialDurationMs, lyrics, onBack, onEdit, o
       audio.removeEventListener('pause', onPause);
       audio.removeEventListener('ended', onEnded);
       audio.removeEventListener('error', onError);
-
-      if (webAudioRef.current === audio) {
-        webAudioRef.current = null;
-      }
+      if (webAudioRef.current === audio) webAudioRef.current = null;
     };
   }, [recordingUri]);
 
@@ -134,25 +149,11 @@ export function PostRecordingView({ initialDurationMs, lyrics, onBack, onEdit, o
     try {
       setErrorMessage(null);
       if (Platform.OS === 'web') {
-        if (!webCanPlay) {
-          setErrorMessage('Playback unavailable in browser — open on your phone to play.');
-          return;
-        }
+        if (!webCanPlay) { setErrorMessage('Playback unavailable in browser — open on your phone to play.'); return; }
         const webAudio = webAudioRef.current;
-        if (!webAudio || webAudio.readyState === 0) {
-          setErrorMessage('Playback unavailable in browser — open on your phone to play.');
-          return;
-        }
-        if (isWebPlaying) {
-          webAudio.pause();
-          webAudio.currentTime = 0;
-          setWebCurrentTime(0);
-          return;
-        }
-        if (webAudio.duration && webAudio.currentTime >= webAudio.duration - 0.01) {
-          webAudio.currentTime = 0;
-          setWebCurrentTime(0);
-        }
+        if (!webAudio || webAudio.readyState === 0) { setErrorMessage('Playback unavailable in browser — open on your phone to play.'); return; }
+        if (isWebPlaying) { webAudio.pause(); webAudio.currentTime = 0; setWebCurrentTime(0); return; }
+        if (webAudio.duration && webAudio.currentTime >= webAudio.duration - 0.01) { webAudio.currentTime = 0; setWebCurrentTime(0); }
         await webAudio.play();
         return;
       }
@@ -179,11 +180,7 @@ export function PostRecordingView({ initialDurationMs, lyrics, onBack, onEdit, o
       setIsWebPlaying(false);
       setWebCurrentTime(0);
     }
-    try {
-      player.pause();
-      await player.seekTo(0);
-    } catch {}
-
+    try { player.pause(); await player.seekTo(0); } catch {}
     setErrorMessage(null);
     onReRecord();
   }, [onReRecord, player]);
@@ -195,15 +192,18 @@ export function PostRecordingView({ initialDurationMs, lyrics, onBack, onEdit, o
       setIsWebPlaying(false);
       setWebCurrentTime(0);
     }
-    try {
-      player.pause();
-      await player.seekTo(0);
-    } catch {}
+    try { player.pause(); await player.seekTo(0); } catch {}
     setErrorMessage(null);
     const playerDurationMs = Math.round((Platform.OS === 'web' ? webDuration : playerStatus.duration) * 1000);
     const durationMs = playerDurationMs > 0 ? playerDurationMs : (initialDurationMs ?? 0);
     onBack(recordingUri ?? '', durationMs);
   }, [initialDurationMs, onBack, player, playerStatus.duration, recordingUri, webDuration]);
+
+  const handleOpenProvider = useCallback((provider: MusicProvider) => {
+    void openExternalMusicLink(provider, { externalLinks } as Parameters<typeof openExternalMusicLink>[1]).then(({ opened }) => {
+      if (!opened) Alert.alert('Link not available for this song.');
+    });
+  }, [externalLinks]);
 
   const isPlaying = Platform.OS === 'web' ? isWebPlaying : playerStatus.playing;
   const playerDuration = Platform.OS === 'web' ? webDuration : playerStatus.duration;
@@ -212,93 +212,140 @@ export function PostRecordingView({ initialDurationMs, lyrics, onBack, onEdit, o
   const playProgress = duration > 0 ? Math.min(currentTime / duration, 1) : 0;
 
   const MAX_BAR_HEIGHT = 48;
+  const bottomInset = Math.max(insets.bottom, 16);
+  const hasProviderLinks = externalLinks && (
+    externalLinks.spotify?.url ?? externalLinks.appleMusic?.url ?? externalLinks.youtube?.url
+  );
+  const availableProviderButtons = useMemo(
+    () => PROVIDER_BUTTONS.filter(({ provider }) => {
+      if (provider === 'spotify') return Boolean(externalLinks?.spotify?.url || externalLinks?.spotify?.uri);
+      if (provider === 'appleMusic') return Boolean(externalLinks?.appleMusic?.url);
+      if (provider === 'youtube') return Boolean(externalLinks?.youtube?.url);
+      return false;
+    }),
+    [externalLinks]
+  );
 
   return (
-    <View
-      style={[
-        styles.container,
-        { paddingTop: insets.top + 16, paddingBottom: Math.max(insets.bottom, 24) },
-      ]}>
+    <View style={styles.container}>
+      {/* Scrollable content */}
+      <ScrollView
+        bounces
+        contentContainerStyle={{ paddingBottom: 16 }}
+        showsVerticalScrollIndicator={false}>
 
-      {/* Header */}
-      <View style={styles.topRow}>
-        <Pressable
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 16 }}
-          onPress={() => { void handleBack(); }}
-          style={styles.backButton}>
-          <Feather color={Palette.accent} name="chevron-left" size={26} />
+        {/* Hero card */}
+        <Pressable onPress={() => void handleBack()} style={styles.heroCard}>
+          <ImageBackground
+            imageStyle={styles.heroImage}
+            source={artworkUrl ? { uri: artworkUrl } : undefined}
+            style={[styles.heroArtwork, !artworkUrl && styles.heroArtworkFallback]}>
+
+            {/* Top row: back + edit */}
+            <View style={[styles.heroTopRow, { paddingTop: insets.top + 12 }]}>
+              <View style={styles.heroBackBtn}>
+                <Feather color={Palette.textPrimary} name="chevron-left" size={24} />
+              </View>
+              {onEdit ? (
+                <Pressable
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  onPress={onEdit}
+                  style={styles.heroEditBtn}>
+                  <Feather color={Palette.textPrimary} name="edit-2" size={17} />
+                </Pressable>
+              ) : null}
+            </View>
+
+            {/* Song info at bottom of hero */}
+            <View style={styles.heroOverlay}>
+              <Text style={styles.heroEyebrow}>
+                {recordedAt ? formatRecordedAt(recordedAt) : 'New Recording'}
+              </Text>
+              <Text numberOfLines={1} style={styles.heroTitle}>
+                {songName || 'Untitled song'}
+              </Text>
+              {songArtist ? (
+                <Text numberOfLines={1} style={styles.heroArtist}>{songArtist}</Text>
+              ) : null}
+              {duration > 0 ? (
+                <View style={styles.heroDurationPill}>
+                  <Feather color={withOpacity('#D7CFF2', 0.85)} name="mic" size={11} />
+                  <Text style={styles.heroDurationText}>{formatDuration(duration)}</Text>
+                </View>
+              ) : null}
+            </View>
+          </ImageBackground>
         </Pressable>
 
-        <View style={styles.songMeta}>
-          <Text numberOfLines={1} style={styles.songName}>
-            {songName || 'Untitled song'}
-          </Text>
-          {songArtist ? (
-            <Text numberOfLines={1} style={styles.songArtist}>{songArtist}</Text>
-          ) : null}
+        {/* Waveform card */}
+        <View style={styles.waveformCard}>
+          <View
+            onLayout={(e: LayoutChangeEvent) => setWaveformWidth(e.nativeEvent.layout.width)}
+            style={styles.waveformContainer}>
+            {waveformHeights.map((h, i) => (
+              <View
+                key={i}
+                style={[styles.waveformBar, { height: Math.max(2, h * MAX_BAR_HEIGHT) }]}
+              />
+            ))}
+            {waveformWidth > 0 && (
+              <View style={[styles.playhead, { left: playProgress * waveformWidth }]} />
+            )}
+          </View>
+          <View style={styles.waveformMeta}>
+            <Text style={styles.duration}>{formatDuration(duration)}</Text>
+            <Pressable onPress={() => void handlePlayPress()} style={styles.waveformPlayBtn}>
+              <Feather color={Palette.background} name={isPlaying ? 'square' : 'play'} size={22} />
+            </Pressable>
+          </View>
         </View>
 
-        {onEdit ? (
+        {/* Lyrics */}
+        {lyrics ? (
+          <View style={styles.lyricsWrap}>
+            <Text style={styles.lyricsText}>{lyrics}</Text>
+          </View>
+        ) : null}
+
+        {errorMessage ? (
+          <Text style={styles.errorText}>{errorMessage}</Text>
+        ) : null}
+      </ScrollView>
+
+      {/* Fixed bottom actions */}
+      <View style={[styles.bottomBar, { paddingBottom: bottomInset + 8 }]}>
+        {/* Provider logos */}
+        {hasProviderLinks ? (
+          <View style={styles.providerRow}>
+            {availableProviderButtons.map(({ provider, icon, color }) => (
+              <Pressable
+                key={provider}
+                hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
+                onPress={() => handleOpenProvider(provider)}
+                style={({ pressed }) => [styles.providerBtn, pressed && { opacity: 0.5 }]}>
+                <FontAwesome5 color={color} name={icon} size={20} />
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
+
+        {/* Sing Again + Share */}
+        <View style={styles.actionRow}>
           <Pressable
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            onPress={onEdit}
-            style={styles.editAction}>
-            <Feather color={Palette.textSecondary} name="edit-2" size={17} />
+            onPress={() => void handleReRecord()}
+            style={({ pressed }) => [styles.actionBtn, styles.actionBtnSing, pressed && styles.actionBtnPressed]}>
+            <Feather color={Palette.accent} name="mic" size={16} />
+            <Text style={[styles.actionLabel, styles.actionLabelSing]}>Sing Again</Text>
           </Pressable>
-        ) : <View style={styles.editPlaceholder} />}
-      </View>
 
-      {/* Waveform card */}
-      <View style={lyrics ? styles.waveformCard : styles.waveformCardCentered}>
-        <View
-          onLayout={(e: LayoutChangeEvent) => setWaveformWidth(e.nativeEvent.layout.width)}
-          style={styles.waveformContainer}>
-          {waveformHeights.map((h, i) => (
-            <View
-              key={i}
-              style={[styles.waveformBar, { height: Math.max(2, h * MAX_BAR_HEIGHT) }]}
-            />
-          ))}
-          {waveformWidth > 0 && (
-            <View style={[styles.playhead, { left: playProgress * waveformWidth }]} />
-          )}
-        </View>
-        <View style={styles.waveformMeta}>
-          <Text style={styles.duration}>{formatDuration(duration)}</Text>
-          <Pressable onPress={() => void handlePlayPress()} style={styles.waveformPlayBtn}>
-            <Feather color={Palette.background} name={isPlaying ? 'square' : 'play'} size={22} />
+          <Pressable
+            onPress={() => void handleSharePress()}
+            style={({ pressed }) => [styles.actionBtn, styles.actionBtnSecondary, pressed && styles.actionBtnPressed]}>
+            <Feather color={Palette.textSecondary} name="share" size={16} />
+            <Text style={styles.actionLabel}>Share</Text>
           </Pressable>
         </View>
       </View>
-
-      {/* Lyrics — only in review mode */}
-      {lyrics ? (
-        <ScrollView
-          contentContainerStyle={styles.lyricsContent}
-          showsVerticalScrollIndicator={false}
-          style={styles.lyricsScroll}>
-          <Text style={styles.lyricsText}>{lyrics}</Text>
-        </ScrollView>
-      ) : null}
-
-      {/* Action row — Re-record | Share */}
-      <View style={styles.actionRow}>
-        <Pressable
-          onPress={() => void handleReRecord()}
-          style={({ pressed }) => [styles.sideAction, pressed && styles.sideActionPressed]}>
-          <Feather color={Palette.textSecondary} name="rotate-ccw" size={16} />
-          <Text style={styles.sideActionLabel}>Re-record</Text>
-        </Pressable>
-
-        <Pressable
-          onPress={() => void handleSharePress()}
-          style={({ pressed }) => [styles.sideAction, pressed && styles.sideActionPressed]}>
-          <Feather color={Palette.textSecondary} name="share" size={16} />
-          <Text style={styles.sideActionLabel}>Share</Text>
-        </Pressable>
-      </View>
-
-      {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
     </View>
   );
 }
@@ -307,66 +354,103 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: Palette.background,
     flex: 1,
-    paddingHorizontal: 16,
   },
 
-  // Header
-  topRow: {
+  // Hero card — same pattern as library hero
+  heroCard: {
+    marginBottom: 12,
+    overflow: 'hidden',
+  },
+  heroArtwork: {
+    aspectRatio: 1,
+    backgroundColor: Palette.surfaceRaised,
+    justifyContent: 'flex-end',
+    width: '100%',
+  },
+  heroArtworkFallback: {
+    backgroundColor: Palette.surface,
+  },
+  heroImage: {
+    // no borderRadius — hero goes edge to edge
+  },
+  heroTopRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 16,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
   },
-  songMeta: {
-    flex: 1,
-    gap: 2,
+  heroBackBtn: {
+    alignItems: 'center',
+    backgroundColor: withOpacity('#000000', 0.35),
+    borderRadius: 20,
+    height: 36,
+    justifyContent: 'center',
+    width: 36,
   },
-  songName: {
+  heroEditBtn: {
+    alignItems: 'center',
+    backgroundColor: withOpacity('#000000', 0.35),
+    borderRadius: 20,
+    height: 36,
+    justifyContent: 'center',
+    width: 36,
+  },
+  heroOverlay: {
+    backgroundColor: 'rgba(0,0,0,0.42)',
+    gap: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  heroEyebrow: {
+    color: withOpacity('#D7CFF2', 0.85),
+    fontFamily: 'DM-Sans-SemiBold',
+    fontSize: 11,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  heroTitle: {
     color: Palette.textPrimary,
     fontFamily: 'DM-Sans-SemiBold',
-    fontSize: 18,
+    fontSize: 22,
+    lineHeight: 28,
   },
-  songArtist: {
-    color: Palette.textSecondary,
+  heroArtist: {
+    color: withOpacity(Palette.textPrimary, 0.7),
     fontFamily: 'DM-Sans',
-    fontSize: 13,
+    fontSize: 14,
   },
-  backButton: {
-    padding: 4,
+  heroDurationPill: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: withOpacity(Palette.accent, 0.2),
+    borderRadius: 20,
+    flexDirection: 'row',
+    gap: 5,
+    marginTop: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
-  editAction: {
-    padding: 4,
-  },
-  editPlaceholder: {
-    width: 25,
+  heroDurationText: {
+    color: withOpacity('#D7CFF2', 0.85),
+    fontFamily: 'DM-Sans-SemiBold',
+    fontSize: 12,
   },
 
-  // Waveform card (matches library card language)
+  // Waveform card
   waveformCard: {
     backgroundColor: withOpacity(Palette.surfaceRaised, 0.62),
     borderColor: withOpacity(Palette.border, 0.65),
     borderRadius: 16,
     borderWidth: 1,
     elevation: 3,
-    marginBottom: 16,
+    marginHorizontal: 16,
+    marginBottom: 12,
     paddingHorizontal: 16,
     paddingVertical: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.14,
-    shadowRadius: 12,
-  },
-  waveformCardCentered: {
-    backgroundColor: withOpacity(Palette.surfaceRaised, 0.62),
-    borderColor: withOpacity(Palette.border, 0.65),
-    borderRadius: 16,
-    borderWidth: 1,
-    elevation: 3,
-    flex: 1,
-    justifyContent: 'center',
-    marginBottom: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.14,
@@ -418,12 +502,9 @@ const styles = StyleSheet.create({
   },
 
   // Lyrics
-  lyricsScroll: {
-    flex: 1,
-    marginBottom: 16,
-  },
-  lyricsContent: {
-    paddingBottom: 8,
+  lyricsWrap: {
+    marginHorizontal: 16,
+    marginBottom: 8,
   },
   lyricsText: {
     color: Palette.textSecondary,
@@ -432,42 +513,68 @@ const styles = StyleSheet.create({
     lineHeight: 34,
   },
 
-  // Action row — Re-record | Share (same card style as library action buttons)
-  actionRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 4,
-  },
-  sideAction: {
-    alignItems: 'center',
-    backgroundColor: withOpacity(Palette.surfaceRaised, 0.62),
-    borderColor: withOpacity(Palette.border, 0.65),
-    borderRadius: 14,
-    borderWidth: 1,
-    elevation: 3,
-    flex: 1,
-    gap: 6,
-    justifyContent: 'center',
-    paddingVertical: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.14,
-    shadowRadius: 10,
-  },
-  sideActionPressed: {
-    opacity: 0.65,
-  },
-  sideActionLabel: {
-    color: Palette.textSecondary,
-    fontFamily: 'DM-Sans',
-    fontSize: 13,
-  },
-
   errorText: {
     color: Palette.recordRed,
     fontFamily: 'DM-Sans',
     fontSize: 13,
-    marginTop: 12,
+    marginTop: 4,
+    paddingHorizontal: 16,
     textAlign: 'center',
+  },
+
+  // Fixed bottom bar
+  bottomBar: {
+    backgroundColor: Palette.background,
+    borderTopColor: withOpacity(Palette.border, 0.5),
+    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+  },
+
+  // Provider logos row
+  providerRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 20,
+    justifyContent: 'center',
+    paddingVertical: 4,
+  },
+  providerBtn: {
+    padding: 6,
+  },
+
+  // Action row — matches SongListItem actionsRow exactly
+  actionRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  actionBtn: {
+    alignItems: 'center',
+    borderRadius: 14,
+    flex: 1,
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'center',
+    paddingVertical: 15,
+  },
+  actionBtnSing: {
+    backgroundColor: withOpacity(Palette.accent, 0.12),
+  },
+  actionBtnSecondary: {
+    backgroundColor: withOpacity(Palette.surfaceRaised, 0.9),
+    borderColor: withOpacity(Palette.border, 0.8),
+    borderWidth: 1,
+  },
+  actionBtnPressed: {
+    opacity: 0.55,
+  },
+  actionLabel: {
+    color: Palette.textSecondary,
+    fontFamily: 'DM-Sans-SemiBold',
+    fontSize: 15,
+  },
+  actionLabelSing: {
+    color: Palette.accent,
   },
 });

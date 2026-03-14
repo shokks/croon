@@ -57,6 +57,7 @@ export function RecordingScreen({ reviewMode = false, songId }: RecordingScreenP
   const [scrollSpeed, setScrollSpeed] = useState<ScrollSpeed>('medium');
   const [syncedLyrics, setSyncedLyrics] = useState<string | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [elapsedMs, setElapsedMs] = useState(0);
   const [reviewUri, setReviewUri] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const songRef = useRef<Song | null>(null);
@@ -85,9 +86,20 @@ export function RecordingScreen({ reviewMode = false, songId }: RecordingScreenP
   useEffect(() => {
     if (recordingState === 'recording') {
       setElapsedSeconds(0);
+      setElapsedMs(0);
+      const startedAt = Date.now();
       timerRef.current = setInterval(() => setElapsedSeconds((s) => s + 1), 1000);
+      const msTimer = setInterval(() => setElapsedMs(Date.now() - startedAt), 100);
+      return () => {
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+        clearInterval(msTimer);
+      };
     } else {
       if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+      setElapsedMs(0);
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [recordingState]);
@@ -137,10 +149,14 @@ export function RecordingScreen({ reviewMode = false, songId }: RecordingScreenP
       <View style={styles.container}>
         <Stack.Screen options={{ headerShown: false }} />
         <PostRecordingView
+          artworkUrl={songRef.current?.artworkUrl}
+          externalLinks={songRef.current?.externalLinks}
+          initialDurationMs={songRef.current?.recording?.durationMs}
           lyrics={lyrics}
           onBack={handleReviewDone}
           onEdit={handleEdit}
           onReRecord={() => setReviewUri(null)}
+          recordedAt={songRef.current?.recording?.recordedAt}
           recordingUri={reviewUri}
           songArtist={songArtist}
           songName={songName}
@@ -210,7 +226,7 @@ export function RecordingScreen({ reviewMode = false, songId }: RecordingScreenP
           lyrics={lyrics}
           scrollSpeed={scrollSpeed}
           syncedLines={syncedLines.length > 0 ? syncedLines : undefined}
-          currentMs={syncedLines.length > 0 ? elapsedSeconds * 1000 : undefined}
+          currentMs={syncedLines.length > 0 ? elapsedMs : undefined}
         />
         <AudioActivityBar />
         <View style={[styles.recordArea, { paddingBottom: bottomInset }]}>
@@ -231,6 +247,8 @@ export function RecordingScreen({ reviewMode = false, songId }: RecordingScreenP
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
       <PostRecordingView
+        artworkUrl={songRef.current?.artworkUrl}
+        externalLinks={songRef.current?.externalLinks}
         onBack={(uri, durationMs) => { void handleDone(uri, durationMs); }}
         onReRecord={resetRecording}
         recordingUri={recordingUri}

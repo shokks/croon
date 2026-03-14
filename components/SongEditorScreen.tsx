@@ -2,7 +2,7 @@ import { Feather, FontAwesome5 } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { type Href, Stack, useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Animated,
@@ -163,7 +163,7 @@ export function SongEditorScreen({
       mounted = false;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- prefill props are stable after mount; doSave is a stable callback
-  }, [songId]);
+  }, []);
 
   // Keyboard mode transitions
   useEffect(() => {
@@ -301,6 +301,22 @@ export function SongEditorScreen({
     });
   }, []);
 
+  const availableProviders = useMemo<{ provider: MusicProvider; icon: string; color: string }[]>(() => {
+    const links = externalLinksRef.current;
+    if (!links) return [];
+    return [
+      links.spotify?.url || links.spotify?.uri
+        ? { provider: 'spotify', icon: 'spotify', color: '#1DB954' }
+        : null,
+      links.appleMusic?.url
+        ? { provider: 'appleMusic', icon: 'apple', color: '#FA2D48' }
+        : null,
+      links.youtube?.url
+        ? { provider: 'youtube', icon: 'youtube', color: '#FF0000' }
+        : null,
+    ].filter(Boolean) as { provider: MusicProvider; icon: string; color: string }[];
+  }, []);
+
   const handleRecord = useCallback(async () => {
     if (!lyricsValueRef.current.trim()) return;
     Keyboard.dismiss();
@@ -324,15 +340,6 @@ export function SongEditorScreen({
     </Pressable>
   ) : songId ? (
     <View style={styles.headerActions}>
-      <Pressable hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => handleOpenProvider('spotify')} style={styles.headerPencil}>
-        <FontAwesome5 color="#1DB954" name="spotify" size={17} />
-      </Pressable>
-      <Pressable hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => handleOpenProvider('appleMusic')} style={styles.headerPencil}>
-        <FontAwesome5 color="#FA2D48" name="apple" size={17} />
-      </Pressable>
-      <Pressable hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => handleOpenProvider('youtube')} style={styles.headerPencil}>
-        <FontAwesome5 color="#FF0000" name="youtube" size={17} />
-      </Pressable>
       <Pressable hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={handleDeleteSong} style={styles.headerPencil}>
         <Feather color={Palette.textDisabled} name="trash-2" size={17} />
       </Pressable>
@@ -449,6 +456,20 @@ export function SongEditorScreen({
           </View>
         </Pressable>
       )}
+
+      {!isEditing && availableProviders.length > 0 ? (
+        <View style={styles.providerRow}>
+          {availableProviders.map(({ provider, icon, color }) => (
+            <Pressable
+              key={provider}
+              hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
+              onPress={() => handleOpenProvider(provider)}
+              style={({ pressed }) => [styles.providerBtn, pressed && styles.providerBtnPressed]}>
+              <FontAwesome5 color={color} name={icon} size={18} />
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
 
       {/* Bottom bar: speed chips + record CTA */}
       <View style={[styles.bottomBar, { paddingBottom: bottomInset + 10 }]}>
@@ -699,5 +720,18 @@ const styles = StyleSheet.create({
   },
   headerPencil: {
     padding: 4,
+  },
+  providerRow: {
+    flexDirection: 'row',
+    gap: 24,
+    justifyContent: 'center',
+    paddingBottom: 8,
+    paddingTop: 2,
+  },
+  providerBtn: {
+    padding: 6,
+  },
+  providerBtnPressed: {
+    opacity: 0.5,
   },
 });

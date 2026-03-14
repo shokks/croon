@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Palette, withOpacity } from '@/constants/theme';
@@ -13,27 +13,20 @@ type LyricsScrollViewProps = {
   currentMs?: number;
 };
 
-type LineOffset = { y: number; height: number };
-
-const SCROLL_DURATION = 650; // ms — smooth but not sluggish
-
-function easeInOutCubic(t: number): number {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-}
-
 export function LyricsScrollView({ lyrics, scrollSpeed, syncedLines, currentMs }: LyricsScrollViewProps) {
   const insets = useSafeAreaInsets();
   const { height: screenHeight } = useWindowDimensions();
 
   const isSynced = Boolean(syncedLines && syncedLines.length > 0);
 
-  // In synced mode use the synced texts; otherwise split lyrics normally
   const lines = useMemo(
-    () => isSynced && syncedLines ? syncedLines.map((l) => l.text) : (lyrics || 'No lyrics.').split('\n'),
+    () => isSynced && syncedLines
+      ? syncedLines.map((l) => l.text)
+      : (lyrics || 'No lyrics.').split('\n'),
     [isSynced, syncedLines, lyrics]
   );
 
-  // In synced mode, derive active index from timestamps
+  // Synced mode: derive active line index from timestamps
   const syncedLineIndex = useMemo(() => {
     if (!isSynced || !syncedLines || syncedLines.length === 0) return 0;
     const ms = currentMs ?? 0;
@@ -45,118 +38,121 @@ export function LyricsScrollView({ lyrics, scrollSpeed, syncedLines, currentMs }
     return idx;
   }, [isSynced, syncedLines, currentMs]);
 
-  const scrollViewRef = useRef<ScrollView>(null);
-  const lineOffsetsRef = useRef<LineOffset[]>([]);
-  const viewportHeightRef = useRef(screenHeight);
-  const currentScrollYRef = useRef(0);
-  const scrollAnimFrameRef = useRef<number | null>(null);
-
   const {
     currentLineIndex: autoLineIndex,
     isPaused,
     isScrolling,
+    onContentSizeChange,
+    onLayout,
+    onScroll,
     pauseScroll,
     resetScroll,
     resumeScroll,
+    scrollViewRef,
     startScroll,
     stopScroll,
-  } = useAutoScroll({ linesCount: lines.length, scrollSpeed });
+  } = useAutoScroll({ lyrics, scrollSpeed, linesCount: lines.length });
 
-  // Use timestamp-derived index in synced mode, beat-interval index otherwise
+  // In synced mode use timestamps, otherwise use continuous-scroll-derived index
   const currentLineIndex = isSynced ? syncedLineIndex : autoLineIndex;
 
   const [didStart, setDidStart] = useState(false);
+  const contentHeightRef = useRef(0);
+  const viewportHeightRef = useRef(screenHeight);
+  const startRetryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const smoothScrollTo = (targetY: number) => {
-    if (scrollAnimFrameRef.current !== null) {
-      cancelAnimationFrame(scrollAnimFrameRef.current);
+  const clearStartRetry = useCallback(() => {
+    if (startRetryRef.current) {
+      clearTimeout(startRetryRef.current);
+      startRetryRef.current = null;
     }
-    const startY = currentScrollYRef.current;
-    const distance = targetY - startY;
-    if (Math.abs(distance) < 1) return;
-    const startTime = performance.now();
+  }, []);
 
-    const step = (now: number) => {
-      const elapsed = now - startTime;
-      const t = Math.min(elapsed / SCROLL_DURATION, 1);
-      const eased = easeInOutCubic(t);
-      const y = startY + distance * eased;
-      scrollViewRef.current?.scrollTo({ y, animated: false });
-      if (t < 1) {
-        scrollAnimFrameRef.current = requestAnimationFrame(step);
-      } else {
-        scrollAnimFrameRef.current = null;
-      }
-    };
+  const tryStartAutoScroll = useCallback(() => {
+    if (isSynced || didStart) return;
+    const contentHeight = contentHeightRef.current;
+    const viewportHeight = viewportHeightRef.current;
+    if (viewportHeight <= 0 || contentHeight <= viewportHeight) {
+      clearStartRetry();
+      startRetryRef.current = setTimeout(() => {
+        tryStartAutoScroll();
+      }, 120);
+      return;
+    }
+    if (startScroll()) setDidStart(true);
+  }, [clearStartRetry, didStart, isSynced, startScroll]);
 
-    scrollAnimFrameRef.current = requestAnimationFrame(step);
-  };
-
-  // Reset when lyrics or speed changes
   useEffect(() => {
-    if (scrollAnimFrameRef.current !== null) {
-      cancelAnimationFrame(scrollAnimFrameRef.current);
-      scrollAnimFrameRef.current = null;
-    }
     resetScroll();
     setDidStart(false);
-    lineOffsetsRef.current = [];
-    currentScrollYRef.current = 0;
-    scrollViewRef.current?.scrollTo({ y: 0, animated: false });
-  }, [lyrics, scrollSpeed, resetScroll]);
+    clearStartRetry();
+  }, [clearStartRetry, lyrics, scrollSpeed, resetScroll]);
 
   useEffect(() => {
-    return () => stopScroll();
-  }, [stopScroll]);
+    return () => {
+      clearStartRetry();
+      stopScroll();
+    };
+  }, [clearStartRetry, stopScroll]);
 
-  // Smooth-scroll to center the active line whenever it advances
   useEffect(() => {
-    const lineData = lineOffsetsRef.current[currentLineIndex];
-    if (!lineData) return;
-    const targetY = Math.max(0, lineData.y - viewportHeightRef.current / 2 + lineData.height / 2);
-    smoothScrollTo(targetY);
-  }, [currentLineIndex]); // smoothScrollTo uses only refs — stable, safe to omit
+    if (isSynced || didStart) return;
+    const id = requestAnimationFrame(() => {
+      tryStartAutoScroll();
+    });
+    return () => cancelAnimationFrame(id);
+  }, [didStart, isSynced, lines.length, tryStartAutoScroll]);
 
-  const handleLayout = (event: { nativeEvent: { layout: { height: number } } }) => {
+  // Synced mode: scroll to the active line whenever syncedLineIndex changes
+  useEffect(() => {
+    if (!isSynced) return;
+    const maxOffset = Math.max(contentHeightRef.current - viewportHeightRef.current, 0);
+    if (maxOffset <= 0 || lines.length <= 1) return;
+    // Proportional: line i centred at (i+0.5)/(N) of maxOffset
+    const targetY = Math.max(0, ((syncedLineIndex + 0.5) / lines.length) * maxOffset);
+    scrollViewRef.current?.scrollTo({ y: targetY, animated: true });
+  }, [isSynced, syncedLineIndex, lines.length, scrollViewRef]);
+
+  const handleContentSizeChange = (width: number, height: number) => {
+    contentHeightRef.current = height;
+    onContentSizeChange(width, height);
+    tryStartAutoScroll();
+  };
+
+  const handleLayout = (event: Parameters<typeof onLayout>[0]) => {
     viewportHeightRef.current = event.nativeEvent.layout.height;
-    // In synced mode the scroll is driven by currentMs, not the beat interval
-    if (!isSynced && !didStart) {
-      if (startScroll()) setDidStart(true);
-    }
+    onLayout(event);
+    tryStartAutoScroll();
   };
 
   const handleTogglePause = () => {
+    if (isSynced) return;
     if (isPaused) {
       resumeScroll();
     } else if (isScrolling) {
       pauseScroll();
     } else {
-      startScroll();
+      if (startScroll()) setDidStart(true);
     }
   };
 
   return (
     <Pressable onPress={handleTogglePause} style={styles.container}>
       <ScrollView
+        onContentSizeChange={handleContentSizeChange}
         onLayout={handleLayout}
-        onScroll={(e: NativeSyntheticEvent<NativeScrollEvent>) => {
-          currentScrollYRef.current = e.nativeEvent.contentOffset.y;
-        }}
+        onScroll={onScroll}
         ref={scrollViewRef}
-        scrollEnabled={false}
+        scrollEnabled
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
         style={styles.scrollView}>
 
-        {/* Top spacer: centers the first line on screen */}
         <View style={{ height: screenHeight / 2 }} />
 
         {lines.map((line, index) => {
           const isActive = index === currentLineIndex;
           const isPast = index < currentLineIndex;
-
-          // Synced mode: uniform dim for all non-active lines
-          // Auto mode: past lines dimmer than future lines
           const lineStyle = isActive
             ? styles.activeLine
             : isSynced
@@ -166,14 +162,7 @@ export function LyricsScrollView({ lyrics, scrollSpeed, syncedLines, currentMs }
                 : styles.futureLine;
 
           return (
-            <View
-              key={index}
-              onLayout={(e) => {
-                lineOffsetsRef.current[index] = {
-                  y: e.nativeEvent.layout.y,
-                  height: e.nativeEvent.layout.height,
-                };
-              }}>
+            <View key={index}>
               <Text style={[styles.lyricsText, lineStyle]}>
                 {line || ' '}
               </Text>
@@ -181,11 +170,9 @@ export function LyricsScrollView({ lyrics, scrollSpeed, syncedLines, currentMs }
           );
         })}
 
-        {/* Bottom spacer: allows last line to scroll to center */}
         <View style={{ height: screenHeight / 2 }} />
       </ScrollView>
 
-      {/* Fixed center guide — subtle horizontal reference line */}
       <View
         pointerEvents="none"
         style={[styles.centerGuide, { top: screenHeight / 2 - 1 }]}

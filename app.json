@@ -11,7 +11,8 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "LyricLoop needs microphone access to record your singing with scrolling lyrics."
+        "NSMicrophoneUsageDescription": "LyricLoop needs microphone access to record your singing with scrolling lyrics.",
+        "LSApplicationQueriesSchemes": ["spotify"]
       }
     },
     "android": {

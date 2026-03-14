@@ -39,9 +39,12 @@ export default function SongSearchScreen() {
 
     const q = `${track.artist} ${track.title}`;
     const externalLinks = JSON.stringify({
-      spotify: { url: `https://open.spotify.com/search?q=${encodeURIComponent(q)}` },
+      spotify: {
+        uri: `spotify:search:${encodeURIComponent(q)}`,
+        url: `https://open.spotify.com/search/${encodeURIComponent(q)}`,
+      },
       appleMusic: track.appleMusicUrl ? { url: track.appleMusicUrl } : undefined,
-      youtube: { url: `https://www.youtube.com/results?search_query=${q.split(' ').join('+')}` },
+      youtube: { url: `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}` },
     });
 
     try {
