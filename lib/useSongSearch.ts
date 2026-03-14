@@ -12,6 +12,7 @@ type ItunesTrack = {
   artworkUrl100: string;
   previewUrl?: string;
   trackTimeMillis: number;
+  trackViewUrl?: string;
 };
 
 type UseSongSearchResult = {
@@ -80,6 +81,7 @@ export function useSongSearch(): UseSongSearchResult {
           artworkUrl: t.artworkUrl100,
           previewUrl: t.previewUrl ?? null,
           durationMs: t.trackTimeMillis,
+          appleMusicUrl: t.trackViewUrl ?? null,
         }));
 
         setResults(mapped);

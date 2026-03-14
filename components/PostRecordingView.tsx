@@ -13,6 +13,7 @@ type PostRecordingViewProps = {
   onEdit?: () => void;
   onReRecord: () => void;
   songName: string;
+  songArtist?: string;
   lyrics?: string;
   initialDurationMs?: number;
   recordedAt?: string;
@@ -45,7 +46,7 @@ function buildWaveform(): number[] {
   });
 }
 
-export function PostRecordingView({ initialDurationMs, lyrics, onBack, onEdit, onReRecord, recordedAt, recordingUri, songName }: PostRecordingViewProps) {
+export function PostRecordingView({ initialDurationMs, lyrics, onBack, onEdit, onReRecord, recordedAt, recordingUri, songArtist, songName }: PostRecordingViewProps) {
   const insets = useSafeAreaInsets();
   const player = useAudioPlayer();
   const playerStatus = useAudioPlayerStatus(player);
@@ -216,9 +217,10 @@ export function PostRecordingView({ initialDurationMs, lyrics, onBack, onEdit, o
     <View
       style={[
         styles.container,
-        { paddingTop: insets.top + 24, paddingBottom: Math.max(insets.bottom, 24) },
+        { paddingTop: insets.top + 16, paddingBottom: Math.max(insets.bottom, 24) },
       ]}>
 
+      {/* Header */}
       <View style={styles.topRow}>
         <Pressable
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 16 }}
@@ -227,9 +229,14 @@ export function PostRecordingView({ initialDurationMs, lyrics, onBack, onEdit, o
           <Feather color={Palette.accent} name="chevron-left" size={26} />
         </Pressable>
 
-        <Text numberOfLines={1} style={styles.songName}>
-          {songName || 'Untitled song'}
-        </Text>
+        <View style={styles.songMeta}>
+          <Text numberOfLines={1} style={styles.songName}>
+            {songName || 'Untitled song'}
+          </Text>
+          {songArtist ? (
+            <Text numberOfLines={1} style={styles.songArtist}>{songArtist}</Text>
+          ) : null}
+        </View>
 
         {onEdit ? (
           <Pressable
@@ -241,8 +248,8 @@ export function PostRecordingView({ initialDurationMs, lyrics, onBack, onEdit, o
         ) : <View style={styles.editPlaceholder} />}
       </View>
 
-      {/* Waveform + duration — centered when no lyrics, top-aligned when lyrics present */}
-      <View style={lyrics ? styles.waveformSection : styles.middleSection}>
+      {/* Waveform card */}
+      <View style={lyrics ? styles.waveformCard : styles.waveformCardCentered}>
         <View
           onLayout={(e: LayoutChangeEvent) => setWaveformWidth(e.nativeEvent.layout.width)}
           style={styles.waveformContainer}>
@@ -256,7 +263,12 @@ export function PostRecordingView({ initialDurationMs, lyrics, onBack, onEdit, o
             <View style={[styles.playhead, { left: playProgress * waveformWidth }]} />
           )}
         </View>
-        <Text style={styles.duration}>{formatDuration(duration)}</Text>
+        <View style={styles.waveformMeta}>
+          <Text style={styles.duration}>{formatDuration(duration)}</Text>
+          <Pressable onPress={() => void handlePlayPress()} style={styles.waveformPlayBtn}>
+            <Feather color={Palette.background} name={isPlaying ? 'square' : 'play'} size={22} />
+          </Pressable>
+        </View>
       </View>
 
       {/* Lyrics — only in review mode */}
@@ -269,17 +281,13 @@ export function PostRecordingView({ initialDurationMs, lyrics, onBack, onEdit, o
         </ScrollView>
       ) : null}
 
-      {/* Action row — Re-record | Play | Share */}
+      {/* Action row — Re-record | Share */}
       <View style={styles.actionRow}>
         <Pressable
           onPress={() => void handleReRecord()}
           style={({ pressed }) => [styles.sideAction, pressed && styles.sideActionPressed]}>
           <Feather color={Palette.textSecondary} name="rotate-ccw" size={16} />
           <Text style={styles.sideActionLabel}>Re-record</Text>
-        </Pressable>
-
-        <Pressable onPress={() => void handlePlayPress()} style={styles.playButton}>
-          <Feather color={Palette.background} name={isPlaying ? 'square' : 'play'} size={30} />
         </Pressable>
 
         <Pressable
@@ -299,19 +307,29 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: Palette.background,
     flex: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: 16,
   },
+
+  // Header
   topRow: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: 8,
-    marginBottom: 20,
+    marginBottom: 16,
+  },
+  songMeta: {
+    flex: 1,
+    gap: 2,
   },
   songName: {
     color: Palette.textPrimary,
-    flex: 1,
     fontFamily: 'DM-Sans-SemiBold',
     fontSize: 18,
+  },
+  songArtist: {
+    color: Palette.textSecondary,
+    fontFamily: 'DM-Sans',
+    fontSize: 13,
   },
   backButton: {
     padding: 4,
@@ -322,25 +340,37 @@ const styles = StyleSheet.create({
   editPlaceholder: {
     width: 25,
   },
-  middleSection: {
+
+  // Waveform card (matches library card language)
+  waveformCard: {
+    backgroundColor: withOpacity(Palette.surfaceRaised, 0.62),
+    borderColor: withOpacity(Palette.border, 0.65),
+    borderRadius: 16,
+    borderWidth: 1,
+    elevation: 3,
+    marginBottom: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.14,
+    shadowRadius: 12,
+  },
+  waveformCardCentered: {
+    backgroundColor: withOpacity(Palette.surfaceRaised, 0.62),
+    borderColor: withOpacity(Palette.border, 0.65),
+    borderRadius: 16,
+    borderWidth: 1,
+    elevation: 3,
     flex: 1,
     justifyContent: 'center',
-  },
-  waveformSection: {
-    marginBottom: 20,
-  },
-  lyricsScroll: {
-    flex: 1,
-    marginBottom: 20,
-  },
-  lyricsContent: {
-    paddingBottom: 8,
-  },
-  lyricsText: {
-    color: Palette.textSecondary,
-    fontFamily: 'Lora',
-    fontSize: 18,
-    lineHeight: 32,
+    marginBottom: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.14,
+    shadowRadius: 12,
   },
   waveformContainer: {
     alignItems: 'flex-end',
@@ -362,27 +392,67 @@ const styles = StyleSheet.create({
     top: 0,
     width: 1.5,
   },
+  waveformMeta: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
   duration: {
     color: Palette.textSecondary,
     fontFamily: 'DM-Sans',
     fontSize: 13,
-    marginTop: 8,
   },
-  actionRow: {
+  waveformPlayBtn: {
     alignItems: 'center',
-    flexDirection: 'row',
-    gap: 12,
+    backgroundColor: Palette.accent,
+    borderRadius: 24,
+    elevation: 6,
+    height: 48,
     justifyContent: 'center',
-    marginTop: 20,
+    shadowColor: Palette.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.45,
+    shadowRadius: 12,
+    width: 48,
+  },
+
+  // Lyrics
+  lyricsScroll: {
+    flex: 1,
+    marginBottom: 16,
+  },
+  lyricsContent: {
+    paddingBottom: 8,
+  },
+  lyricsText: {
+    color: Palette.textSecondary,
+    fontFamily: 'Lora',
+    fontSize: 19,
+    lineHeight: 34,
+  },
+
+  // Action row — Re-record | Share (same card style as library action buttons)
+  actionRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 4,
   },
   sideAction: {
     alignItems: 'center',
-    backgroundColor: Palette.surface,
+    backgroundColor: withOpacity(Palette.surfaceRaised, 0.62),
+    borderColor: withOpacity(Palette.border, 0.65),
     borderRadius: 14,
+    borderWidth: 1,
+    elevation: 3,
     flex: 1,
     gap: 6,
     justifyContent: 'center',
     paddingVertical: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.14,
+    shadowRadius: 10,
   },
   sideActionPressed: {
     opacity: 0.65,
@@ -392,19 +462,7 @@ const styles = StyleSheet.create({
     fontFamily: 'DM-Sans',
     fontSize: 13,
   },
-  playButton: {
-    alignItems: 'center',
-    backgroundColor: Palette.accent,
-    borderRadius: 40,
-    elevation: 10,
-    height: 80,
-    justifyContent: 'center',
-    shadowColor: Palette.accent,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.5,
-    shadowRadius: 18,
-    width: 80,
-  },
+
   errorText: {
     color: Palette.recordRed,
     fontFamily: 'DM-Sans',

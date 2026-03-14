@@ -34,29 +34,24 @@ function getLyricsPreview(lyrics: string): string {
 
 type SongListItemProps = {
   song: Song;
-  onDelete: (id: string) => void;
   onPress: (id: string) => void;
+  onRecord: (id: string) => void;
 };
 
-export function SongListItem({ song, onDelete, onPress }: SongListItemProps) {
-  const preview = getLyricsPreview(song.lyrics);
+export function SongListItem({ song, onPress, onRecord }: SongListItemProps) {
+  const subtitle = song.artist || getLyricsPreview(song.lyrics);
   const timestamp = song.recording?.recordedAt ?? song.createdAt;
 
   return (
     <View style={styles.container}>
+      {/* Top: artwork + text — tapping opens review or editor */}
       <Pressable
         onPress={() => onPress(song.id)}
-        style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}>
-
-        {/* Artwork thumbnail */}
+        style={({ pressed }) => [styles.topRow, pressed && styles.topRowPressed]}>
         <View style={styles.artworkWrap}>
           {song.artworkUrl ? (
             <>
-              <Image
-                source={{ uri: song.artworkUrl }}
-                style={styles.artwork}
-              />
-              {/* Warm tint to blend into dark background */}
+              <Image source={{ uri: song.artworkUrl }} style={styles.artwork} />
               <View style={styles.artworkTint} />
             </>
           ) : (
@@ -64,40 +59,55 @@ export function SongListItem({ song, onDelete, onPress }: SongListItemProps) {
               <Feather color={Palette.textDisabled} name="music" size={20} />
             </View>
           )}
-          {/* Recorded indicator dot */}
           {song.recording ? <View style={styles.recordedDot} /> : null}
         </View>
 
-        {/* Text content */}
         <View style={styles.content}>
           <Text numberOfLines={1} style={styles.title}>
             {song.name || 'Untitled song'}
           </Text>
-          {preview ? (
-            <Text numberOfLines={1} style={styles.preview}>
-              {preview}
+          {subtitle ? (
+            <Text numberOfLines={1} style={[styles.preview, song.artist && styles.previewArtist]}>
+              {subtitle}
             </Text>
           ) : null}
           <View style={styles.metaRow}>
             <Text style={styles.date}>{formatDate(timestamp)}</Text>
             {song.recording ? (
-              <Text style={styles.duration}>
-                {'▶  ' + formatDuration(song.recording.durationMs)}
-              </Text>
+              <Text style={styles.duration}>{'▶  ' + formatDuration(song.recording.durationMs)}</Text>
             ) : null}
+            <View style={styles.metaSpacer} />
+            <View style={styles.speedBadge}>
+              <Text style={styles.speedText}>{song.scrollSpeed}</Text>
+            </View>
           </View>
         </View>
-
       </Pressable>
 
-      <Pressable
-        accessibilityLabel={`Delete ${song.name || 'song'}`}
-        accessibilityRole="button"
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        onPress={() => onDelete(song.id)}
-        style={styles.deleteButton}>
-        <Feather color={Palette.textDisabled} name="trash-2" size={15} />
-      </Pressable>
+      {/* Actions row */}
+      <View style={styles.actionsRow}>
+        {song.recording ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => onPress(song.id)}
+            style={({ pressed }) => [styles.actionBtn, styles.actionBtnPlay, pressed && styles.actionBtnPressed]}>
+            <Feather color={Palette.textSecondary} name="play" size={15} />
+            <Text style={styles.actionText}>Play</Text>
+          </Pressable>
+        ) : null}
+
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => onRecord(song.id)}
+          style={({ pressed }) => [styles.actionBtn, styles.actionBtnSing, pressed && styles.actionBtnPressed]}>
+          <Feather color={Palette.accent} name="mic" size={15} />
+          <Text style={[styles.actionText, styles.actionTextSing]}>
+            {song.recording ? 'Re-record' : 'Sing'}
+          </Text>
+        </Pressable>
+
+
+      </View>
     </View>
   );
 }
@@ -106,28 +116,28 @@ const ARTWORK_SIZE = 56;
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 10,
-  },
-  row: {
-    alignItems: 'center',
     backgroundColor: withOpacity(Palette.surfaceRaised, 0.62),
     borderColor: withOpacity(Palette.border, 0.65),
     borderRadius: 16,
     borderWidth: 1,
     elevation: 3,
-    flex: 1,
+    marginBottom: 10,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.14,
+    shadowRadius: 12,
+  },
+
+  topRow: {
+    alignItems: 'center',
     flexDirection: 'row',
     gap: 14,
     paddingHorizontal: 12,
     paddingVertical: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 14,
   },
-  rowPressed: {
-    opacity: 0.82,
-    transform: [{ scale: 0.99 }],
+  topRowPressed: {
+    opacity: 0.8,
   },
 
   // Artwork
@@ -180,11 +190,19 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
   },
+  previewArtist: {
+    color: Palette.textSecondary,
+    fontFamily: 'DM-Sans-SemiBold',
+    fontSize: 13,
+  },
   metaRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
     marginTop: 1,
+  },
+  metaSpacer: {
+    flex: 1,
   },
   date: {
     color: Palette.textDisabled,
@@ -197,11 +215,54 @@ const styles = StyleSheet.create({
     fontSize: 12,
     opacity: 0.8,
   },
+  speedBadge: {
+    backgroundColor: withOpacity(Palette.border, 0.8),
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  speedText: {
+    color: Palette.textDisabled,
+    fontFamily: 'DM-Sans',
+    fontSize: 11,
+    textTransform: 'capitalize',
+  },
 
-  deleteButton: {
-    alignSelf: 'flex-end',
-    borderRadius: 20,
-    marginTop: 2,
-    padding: 8,
+  // Actions row
+  actionsRow: {
+    borderTopColor: withOpacity(Palette.border, 0.5),
+    borderTopWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    gap: 8,
+    padding: 10,
+  },
+  actionBtn: {
+    alignItems: 'center',
+    borderRadius: 12,
+    flex: 1,
+    flexDirection: 'row',
+    gap: 7,
+    justifyContent: 'center',
+    paddingVertical: 11,
+  },
+  actionBtnPlay: {
+    backgroundColor: withOpacity(Palette.surfaceRaised, 0.9),
+    borderColor: withOpacity(Palette.border, 0.8),
+    borderWidth: 1,
+  },
+  actionBtnSing: {
+    backgroundColor: withOpacity(Palette.accent, 0.12),
+  },
+
+  actionBtnPressed: {
+    opacity: 0.5,
+  },
+  actionText: {
+    color: Palette.textSecondary,
+    fontFamily: 'DM-Sans-SemiBold',
+    fontSize: 14,
+  },
+  actionTextSing: {
+    color: Palette.accent,
   },
 });

@@ -1,9 +1,10 @@
-import { Feather } from '@expo/vector-icons';
+import { Feather, FontAwesome5 } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { type Href, Stack, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Alert,
   Animated,
   Keyboard,
   KeyboardAvoidingView,
@@ -17,17 +18,20 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Palette } from '@/constants/theme';
-import { getSongs, saveSong } from '@/lib/storage';
-import type { ScrollSpeed, SongRecording } from '@/types';
+import { Palette, withOpacity } from '@/constants/theme';
+import { openExternalMusicLink, type MusicProvider } from '@/lib/openExternalMusicLink';
+import { deleteSong, getSongs, saveSong } from '@/lib/storage';
+import type { ExternalSongLinks, ScrollSpeed, SongRecording } from '@/types';
 
 type SongEditorScreenProps = {
   songId?: string;
   prefillName?: string;
+  prefillArtist?: string;
   prefillLyrics?: string;
   lyricsSource?: 'lrclib' | 'manual';
   prefillSyncedLyrics?: string;
   prefillArtworkUrl?: string;
+  prefillExternalLinks?: string;
 };
 
 function formatDuration(ms: number): string {
@@ -37,18 +41,27 @@ function formatDuration(ms: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+const SPEED_OPTIONS: { label: string; value: ScrollSpeed }[] = [
+  { label: 'Ballad', value: 'slow' },
+  { label: 'Normal', value: 'medium' },
+  { label: 'Uptempo', value: 'fast' },
+];
+
 export function SongEditorScreen({
   songId,
   prefillName,
+  prefillArtist,
   prefillLyrics,
   lyricsSource,
   prefillSyncedLyrics,
   prefillArtworkUrl,
+  prefillExternalLinks,
 }: SongEditorScreenProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
   const [name, setName] = useState('');
+  const [artist, setArtist] = useState('');
   const [lyrics, setLyrics] = useState('');
   const [scrollSpeed, setScrollSpeed] = useState<ScrollSpeed>('medium');
   const [isLoading, setIsLoading] = useState(Boolean(songId));
@@ -61,11 +74,13 @@ export function SongEditorScreen({
 
   const stableSongId = useRef(songId ?? `song-${Date.now()}`);
   const createdAtRef = useRef<string | null>(null);
+  const artistInputRef = useRef<TextInput>(null);
   const lyricsRef = useRef<TextInput>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Refs tracking latest values so doSave never captures stale state
   const nameRef = useRef('');
+  const artistRef = useRef('');
   const lyricsValueRef = useRef('');
   const scrollSpeedRef = useRef<ScrollSpeed>('medium');
   const lastRecordingRef = useRef<SongRecording | null>(null);
@@ -75,6 +90,10 @@ export function SongEditorScreen({
   // Prefill support (new songs from search)
   const syncedLyricsRef = useRef<string | null>(prefillSyncedLyrics?.trim() || null);
   const artworkUrlRef = useRef<string | null>(prefillArtworkUrl?.trim() || null);
+  const externalLinksRef = useRef<ExternalSongLinks | null>((() => {
+    if (!prefillExternalLinks) return null;
+    try { return JSON.parse(prefillExternalLinks) as ExternalSongLinks; } catch { return null; }
+  })());
   const [isPrefilled, setIsPrefilled] = useState(
     lyricsSource === 'lrclib' && Boolean(prefillLyrics?.trim())
   );
@@ -88,6 +107,10 @@ export function SongEditorScreen({
       if (prefillName?.trim()) {
         setName(prefillName.trim());
         nameRef.current = prefillName.trim();
+      }
+      if (prefillArtist?.trim()) {
+        setArtist(prefillArtist.trim());
+        artistRef.current = prefillArtist.trim();
       }
       if (prefillLyrics?.trim()) {
         setLyrics(prefillLyrics.trim());
@@ -118,10 +141,12 @@ export function SongEditorScreen({
       }
 
       setName(song.name);
+      setArtist(song.artist ?? '');
       setLyrics(song.lyrics);
       setScrollSpeed(song.scrollSpeed);
       setLastRecording(song.recording ?? null);
       nameRef.current = song.name;
+      artistRef.current = song.artist ?? '';
       lyricsValueRef.current = song.lyrics;
       scrollSpeedRef.current = song.scrollSpeed;
       lastRecordingRef.current = song.recording ?? null;
@@ -129,6 +154,7 @@ export function SongEditorScreen({
       stableSongId.current = song.id;
       artworkUrlRef.current = song.artworkUrl ?? null;
       syncedLyricsRef.current = song.syncedLyrics ?? null;
+      externalLinksRef.current = song.externalLinks ?? null;
       isLoadedRef.current = true;
       setIsLoading(false);
     })();
@@ -169,15 +195,20 @@ export function SongEditorScreen({
     miniPlayer.replace(lastRecording.uri);
   }, [miniPlayer, lastRecording?.uri]);
 
-  const handleMiniPlayerPress = useCallback(() => {
-    if (!lastRecording?.uri) return;
-    if (miniPlayerStatus.playing) {
-      miniPlayer.pause();
-    } else {
+  const handleMiniPlayerPress = useCallback(async () => {
+    if (!lastRecording?.uri || Platform.OS === 'web') return;
+    try {
+      if (miniPlayerStatus.playing) {
+        miniPlayer.pause();
+        await miniPlayer.seekTo(0);
+        return;
+      }
       if (miniPlayerStatus.didJustFinish) {
-        void miniPlayer.seekTo(0);
+        await miniPlayer.seekTo(0);
       }
       miniPlayer.play();
+    } catch {
+      // silent fail — playback unavailable
     }
   }, [lastRecording?.uri, miniPlayer, miniPlayerStatus.didJustFinish, miniPlayerStatus.playing]);
 
@@ -191,12 +222,14 @@ export function SongEditorScreen({
     await saveSong({
       id: stableSongId.current,
       name: nameRef.current.trim() || 'Untitled song',
+      artist: artistRef.current.trim() || undefined,
       lyrics: lyricsValueRef.current,
       scrollSpeed: scrollSpeedRef.current,
       createdAt: createdAtRef.current,
       recording: lastRecordingRef.current ?? undefined,
       syncedLyrics: syncedLyricsRef.current ?? undefined,
       artworkUrl: artworkUrlRef.current ?? undefined,
+      externalLinks: externalLinksRef.current ?? undefined,
     });
   }, []);
 
@@ -222,12 +255,51 @@ export function SongEditorScreen({
     scheduleSave();
   };
 
+  const handleArtistChange = (text: string) => {
+    setArtist(text);
+    artistRef.current = text;
+    scheduleSave();
+  };
+
   const handleLyricsChange = (text: string) => {
     setLyrics(text);
     lyricsValueRef.current = text;
     if (isPrefilled) setIsPrefilled(false);
     scheduleSave();
   };
+
+  const handleScrollSpeedChange = useCallback(
+    (speed: ScrollSpeed) => {
+      setScrollSpeed(speed);
+      scrollSpeedRef.current = speed;
+      scheduleSave();
+    },
+    [scheduleSave]
+  );
+
+  const handleDeleteSong = useCallback(() => {
+    Alert.alert(
+      'Delete song',
+      `"${nameRef.current.trim() || 'Untitled song'}" will be permanently deleted.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            await deleteSong(stableSongId.current);
+            router.replace('/' as Href);
+          },
+        },
+      ]
+    );
+  }, [router]);
+
+  const handleOpenProvider = useCallback((provider: MusicProvider) => {
+    void openExternalMusicLink(provider, { externalLinks: externalLinksRef.current ?? undefined } as Parameters<typeof openExternalMusicLink>[1]).then(({ opened }) => {
+      if (!opened) Alert.alert('Link not available for this song.');
+    });
+  }, []);
 
   const handleRecord = useCallback(async () => {
     if (!lyricsValueRef.current.trim()) return;
@@ -250,6 +322,21 @@ export function SongEditorScreen({
       style={styles.headerPencil}>
       <Text style={styles.headerDoneLabel}>Done</Text>
     </Pressable>
+  ) : songId ? (
+    <View style={styles.headerActions}>
+      <Pressable hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => handleOpenProvider('spotify')} style={styles.headerPencil}>
+        <FontAwesome5 color="#1DB954" name="spotify" size={17} />
+      </Pressable>
+      <Pressable hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => handleOpenProvider('appleMusic')} style={styles.headerPencil}>
+        <FontAwesome5 color="#FA2D48" name="apple" size={17} />
+      </Pressable>
+      <Pressable hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => handleOpenProvider('youtube')} style={styles.headerPencil}>
+        <FontAwesome5 color="#FF0000" name="youtube" size={17} />
+      </Pressable>
+      <Pressable hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={handleDeleteSong} style={styles.headerPencil}>
+        <Feather color={Palette.textDisabled} name="trash-2" size={17} />
+      </Pressable>
+    </View>
   ) : null;
 
   if (isLoading) {
@@ -282,12 +369,25 @@ export function SongEditorScreen({
       <TextInput
         blurOnSubmit={false}
         onChangeText={handleNameChange}
-        onSubmitEditing={() => lyricsRef.current?.focus()}
+        onSubmitEditing={() => artistInputRef.current?.focus()}
         placeholder="Song name..."
         placeholderTextColor={Palette.textSecondary}
         returnKeyType="next"
         style={styles.nameInput}
         value={name}
+      />
+
+      {/* Artist — subtle secondary field */}
+      <TextInput
+        blurOnSubmit={false}
+        onChangeText={handleArtistChange}
+        onSubmitEditing={() => lyricsRef.current?.focus()}
+        placeholder="Artist"
+        placeholderTextColor={Palette.textDisabled}
+        ref={artistInputRef}
+        returnKeyType="next"
+        style={styles.artistInput}
+        value={artist}
       />
 
       <View style={styles.divider} />
@@ -323,35 +423,50 @@ export function SongEditorScreen({
         </Animated.View>
       </View>
 
-
       {/* LRCLIB helper */}
       {isPrefilled && (
         <Text style={styles.prefillHelper}>Lyrics auto-filled — tap to edit.</Text>
       )}
 
-      {/* Last take mini-player — only when a recording exists */}
+      {/* Last take mini-player card — only when recording exists and keyboard is hidden */}
       {lastRecording && !isEditing && (
-        <Pressable onPress={handleMiniPlayerPress} style={styles.miniPlayer}>
-          <Feather
-            color={Palette.accent}
-            name={miniPlayerStatus.playing ? 'pause' : 'play'}
-            size={14}
-          />
-          <Text style={styles.miniPlayerText}>
-            Last take
-            <Text style={styles.miniPlayerDuration}>
-              {'  ·  ' + formatDuration(lastRecording.durationMs)}
-            </Text>
-          </Text>
+        <Pressable
+          onPress={() => void handleMiniPlayerPress()}
+          style={({ pressed }) => [styles.miniPlayerCard, pressed && styles.miniPlayerCardPressed]}>
+          <View style={styles.miniPlayerIconWrap}>
+            <Feather color={Palette.accent} name="headphones" size={18} />
+          </View>
+          <View style={styles.miniPlayerContent}>
+            <Text style={styles.miniPlayerTitle}>Last take</Text>
+            <Text style={styles.miniPlayerDuration}>{formatDuration(lastRecording.durationMs)}</Text>
+          </View>
+          <View style={styles.miniPlayerPlayBtn}>
+            <Feather
+              color={Palette.accent}
+              name={miniPlayerStatus.playing ? 'pause' : 'play'}
+              size={20}
+            />
+          </View>
         </Pressable>
       )}
 
-      {/* Record CTA */}
-      <View
-        style={[
-          styles.recordCtaWrap,
-          { paddingBottom: bottomInset + 10 },
-        ]}>
+      {/* Bottom bar: speed chips + record CTA */}
+      <View style={[styles.bottomBar, { paddingBottom: bottomInset + 10 }]}>
+        {!isEditing && (
+          <View style={styles.speedRow}>
+            {SPEED_OPTIONS.map((opt) => (
+              <Pressable
+                key={opt.value}
+                onPress={() => handleScrollSpeedChange(opt.value)}
+                style={[styles.speedChip, scrollSpeed === opt.value && styles.speedChipActive]}>
+                <Text style={[styles.speedChipText, scrollSpeed === opt.value && styles.speedChipTextActive]}>
+                  {opt.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
+
         <Pressable
           disabled={!hasLyrics}
           onPress={() => void handleRecord()}
@@ -366,7 +481,7 @@ export function SongEditorScreen({
             size={17}
           />
           <Text style={[styles.recordCtaText, !hasLyrics && styles.recordCtaTextDisabled]}>
-            Start Recording
+            {lastRecording ? 'Record Again' : 'Start Recording'}
           </Text>
         </Pressable>
       </View>
@@ -389,17 +504,30 @@ const styles = StyleSheet.create({
     fontFamily: 'DM-Sans',
     fontSize: 16,
   },
+
+  // Name + artist inputs
   nameInput: {
     color: Palette.textPrimary,
     fontFamily: 'DM-Sans-SemiBold',
-    fontSize: 18,
+    fontSize: 20,
+    paddingBottom: 2,
     paddingHorizontal: 20,
-    paddingVertical: 14,
+    paddingTop: 16,
+  },
+  artistInput: {
+    color: Palette.textSecondary,
+    fontFamily: 'DM-Sans',
+    fontSize: 14,
+    paddingBottom: 14,
+    paddingHorizontal: 20,
+    paddingTop: 4,
   },
   divider: {
     backgroundColor: Palette.border,
     height: StyleSheet.hairlineWidth,
   },
+
+  // Lyrics
   lyricsContainer: {
     flex: 1,
   },
@@ -411,36 +539,124 @@ const styles = StyleSheet.create({
     lineHeight: 26,
     paddingBottom: 8,
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 18,
   },
   lyricsPreviewContent: {
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingHorizontal: 22,
+    paddingVertical: 22,
   },
   lyricsPreviewText: {
     color: Palette.textPrimary,
     fontFamily: 'Lora',
     fontSize: 22,
-    lineHeight: 37,
+    lineHeight: 38,
   },
   lyricsPreviewPlaceholder: {
     color: Palette.textSecondary,
     fontFamily: 'Lora',
     fontSize: 22,
-    lineHeight: 37,
+    lineHeight: 38,
   },
-  headerDoneLabel: {
-    color: Palette.accent,
+
+  // Prefill helper
+  prefillHelper: {
+    color: Palette.textDisabled,
+    fontFamily: 'DM-Sans',
+    fontSize: 13,
+    paddingHorizontal: 20,
+    paddingVertical: 6,
+  },
+
+  // Mini-player card (matches library card language)
+  miniPlayerCard: {
+    alignItems: 'center',
+    backgroundColor: withOpacity(Palette.surfaceRaised, 0.62),
+    borderColor: withOpacity(Palette.border, 0.65),
+    borderRadius: 14,
+    borderWidth: 1,
+    elevation: 3,
+    flexDirection: 'row',
+    gap: 12,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.14,
+    shadowRadius: 10,
+  },
+  miniPlayerIconWrap: {
+    alignItems: 'center',
+    backgroundColor: withOpacity(Palette.accent, 0.1),
+    borderRadius: 10,
+    height: 38,
+    justifyContent: 'center',
+    width: 38,
+  },
+  miniPlayerContent: {
+    flex: 1,
+    gap: 2,
+  },
+  miniPlayerTitle: {
+    color: Palette.textPrimary,
     fontFamily: 'DM-Sans-SemiBold',
-    fontSize: 16,
+    fontSize: 14,
   },
-  recordCtaWrap: {
+  miniPlayerDuration: {
+    color: Palette.textDisabled,
+    fontFamily: 'DM-Sans',
+    fontSize: 12,
+  },
+  miniPlayerCardPressed: {
+    opacity: 0.75,
+  },
+  miniPlayerPlayBtn: {
+    alignItems: 'center',
+    borderRadius: 10,
+    height: 38,
+    justifyContent: 'center',
+    width: 38,
+  },
+
+  // Bottom bar
+  bottomBar: {
     backgroundColor: Palette.background,
     borderTopColor: Palette.border,
     borderTopWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 20,
+    gap: 10,
+    paddingHorizontal: 16,
     paddingTop: 14,
   },
+
+  // Speed chips (same pill language as library filter chips)
+  speedRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  speedChip: {
+    alignItems: 'center',
+    borderColor: Palette.border,
+    borderRadius: 20,
+    borderWidth: 1,
+    flex: 1,
+    paddingVertical: 7,
+  },
+  speedChipActive: {
+    backgroundColor: withOpacity(Palette.accent, 0.15),
+    borderColor: withOpacity(Palette.accent, 0.5),
+  },
+  speedChipText: {
+    color: Palette.textSecondary,
+    fontFamily: 'DM-Sans',
+    fontSize: 14,
+  },
+  speedChipTextActive: {
+    color: Palette.accent,
+    fontFamily: 'DM-Sans-SemiBold',
+  },
+
+  // Record CTA
   recordCta: {
     alignItems: 'center',
     backgroundColor: Palette.accent,
@@ -469,34 +685,19 @@ const styles = StyleSheet.create({
   recordCtaTextDisabled: {
     color: Palette.textDisabled,
   },
-  miniPlayer: {
+
+  // Header controls
+  headerActions: {
     alignItems: 'center',
-    backgroundColor: Palette.surface,
-    borderTopColor: Palette.border,
-    borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
-    gap: 10,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
+    gap: 4,
   },
-  miniPlayerText: {
-    color: Palette.textSecondary,
-    fontFamily: 'DM-Sans',
-    fontSize: 14,
-  },
-  miniPlayerDuration: {
-    color: Palette.textDisabled,
-    fontFamily: 'DM-Sans',
-    fontSize: 13,
+  headerDoneLabel: {
+    color: Palette.accent,
+    fontFamily: 'DM-Sans-SemiBold',
+    fontSize: 16,
   },
   headerPencil: {
     padding: 4,
-  },
-  prefillHelper: {
-    color: Palette.textDisabled,
-    fontFamily: 'DM-Sans',
-    fontSize: 13,
-    paddingHorizontal: 20,
-    paddingVertical: 8,
   },
 });

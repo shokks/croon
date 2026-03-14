@@ -52,6 +52,7 @@ export function RecordingScreen({ reviewMode = false, songId }: RecordingScreenP
   const insets = useSafeAreaInsets();
 
   const [songName, setSongName] = useState('');
+  const [songArtist, setSongArtist] = useState('');
   const [lyrics, setLyrics] = useState('');
   const [scrollSpeed, setScrollSpeed] = useState<ScrollSpeed>('medium');
   const [syncedLyrics, setSyncedLyrics] = useState<string | null>(null);
@@ -69,6 +70,7 @@ export function RecordingScreen({ reviewMode = false, songId }: RecordingScreenP
       const song = songs.find((s) => s.id === songId);
       if (!song) return;
       setSongName(song.name);
+      setSongArtist(song.artist ?? '');
       setLyrics(song.lyrics);
       setScrollSpeed(song.scrollSpeed);
       setSyncedLyrics(song.syncedLyrics ?? null);
@@ -140,6 +142,7 @@ export function RecordingScreen({ reviewMode = false, songId }: RecordingScreenP
           onEdit={handleEdit}
           onReRecord={() => setReviewUri(null)}
           recordingUri={reviewUri}
+          songArtist={songArtist}
           songName={songName}
         />
       </View>
@@ -231,6 +234,7 @@ export function RecordingScreen({ reviewMode = false, songId }: RecordingScreenP
         onBack={(uri, durationMs) => { void handleDone(uri, durationMs); }}
         onReRecord={resetRecording}
         recordingUri={recordingUri}
+        songArtist={songArtist}
         songName={songName}
       />
     </View>

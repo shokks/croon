@@ -37,30 +37,40 @@ export default function SongSearchScreen() {
     const controller = new AbortController();
     abortRef.current = controller;
 
+    const q = `${track.artist} ${track.title}`;
+    const externalLinks = JSON.stringify({
+      spotify: { url: `https://open.spotify.com/search?q=${encodeURIComponent(q)}` },
+      appleMusic: track.appleMusicUrl ? { url: track.appleMusicUrl } : undefined,
+      youtube: { url: `https://www.youtube.com/results?search_query=${q.split(' ').join('+')}` },
+    });
+
     try {
       const result = await lookupLyricsForTrack(track, controller.signal);
 
       router.replace({
         pathname: '/song/new',
         params: {
-          prefillName: `${track.title} — ${track.artist}`,
+          prefillName: track.title,
+          prefillArtist: track.artist,
           prefillLyrics: result.plainLyrics ?? '',
           lyricsSource: result.source,
           prefillSyncedLyrics: result.syncedLyrics ?? '',
           prefillArtworkUrl: track.artworkUrl.replace('100x100bb', '300x300bb'),
+          prefillExternalLinks: externalLinks,
         },
       } as Parameters<typeof router.replace>[0]);
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') return;
-      // Navigate anyway with just the name
       router.replace({
         pathname: '/song/new',
         params: {
-          prefillName: `${track.title} — ${track.artist}`,
+          prefillName: track.title,
+          prefillArtist: track.artist,
           prefillLyrics: '',
           lyricsSource: 'manual',
           prefillSyncedLyrics: '',
           prefillArtworkUrl: track.artworkUrl.replace('100x100bb', '300x300bb'),
+          prefillExternalLinks: externalLinks,
         },
       } as Parameters<typeof router.replace>[0]);
     } finally {

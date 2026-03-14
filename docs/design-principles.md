@@ -27,32 +27,54 @@ The app should feel like a tool a serious-but-private person would be proud to o
 
 ## 1. Color
 
-**Base palette: Dark and warm, never clinical.**
-
-Avoid pure black (`#000000`) and pure white. They feel cold and harsh — wrong for vulnerability.
+**Implemented palette** (source of truth: `constants/theme.ts` → `Palette`):
 
 ```
-Background:       #0E0C0A  (warm near-black, like a darkened recording booth)
-Surface:          #1A1714  (card/sheet backgrounds)
-Surface raised:   #242019  (elevated elements, modals)
-Border:           #2E2A24  (subtle dividers)
+Background:       #0C0C0E
+Surface:          #161618
+Surface raised:   #222224
+Border:           #2C2C30
 
-Text primary:     #F2EDE6  (warm off-white, like aged paper)
-Text secondary:   #8A8070  (muted warm grey)
-Text disabled:    #4A4540  
+Text primary:     #F2F2F0
+Text secondary:   #8A8A90
+Text disabled:    #484850
 
-Accent:           #D4A853  (warm amber/gold — a lit candle, not a neon sign)
-Accent muted:     #3D2E10  (accent tint for backgrounds)
+Accent:           #9B8EC4
+Accent muted:     #1E1828
 
-Record red:       #C0392B  (deep, confident red — not bright alert red)
-Record active:    #E74C3C  (pulsing state)
+Record red:       #C0392B
+Record active:    #E74C3C
 ```
+
+**Why each choice:**
+
+- **`#0C0C0E` background** — Near-black with the lightest cool undertone. Avoids the harshness of pure `#000000` (which creates eye-straining contrast on OLED) while keeping the screen dark enough for low-light use — the primary context for rehearsing lyrics before sleep or in a bedroom.
+
+- **`#161618` / `#222224` surfaces** — Two steps of elevation in neutral-dark. Subtle enough that cards don't feel like boxes, but enough contrast to separate sections without borders. The cool undertone unifies all surfaces so the eye reads them as one environment, not a stack of panels.
+
+- **`#2C2C30` border** — Just visible enough to divide without drawing attention. Deliberately dim — borders should never compete with text.
+
+- **`#F2F2F0` text primary** — Warm off-white, not pure white. Pure white on near-black is clinically bright. `#F2F2F0` reads as softer, like paper in lamplight — appropriate for a screen the user stares at for several minutes while singing.
+
+- **`#8A8A90` text secondary / `#484850` text disabled** — Stepped grey scale matching the background's cool undertone. Secondary text guides without distracting. Disabled text is intentionally barely visible — it signals "not your focus right now" without disappearing entirely.
+
+- **`#9B8EC4` accent (muted lavender-purple)** — This is the most deliberate choice. The accent needed to be:
+  - Clearly interactive (readable against all dark surfaces)
+  - Not energetic or excited (rules out orange, yellow, bright green, electric blue)
+  - Not generic productivity (rules out blue)
+  - Not karaoke-app (rules out hot pink, electric purple, neon anything)
+  
+  Desaturated lavender sits at the intersection of "musical" and "calm." It has enough personality to feel intentional without shouting. On dark backgrounds it reads as a lit candle in the distance — present, not glaring.
+
+- **`#1E1828` accent muted** — The accent at ~15% opacity, used for chip/badge backgrounds. Provides a subtle tinted surface without adding visual weight.
+
+- **`#C0392B` / `#E74C3C` record red** — The record button is the one element that is allowed to demand attention. Deep red is universal for "recording" — no explanation needed. Two values: idle (deep, confident) and active (slightly brighter, used for the pulsing ring animation).
 
 **What to avoid:**
-- Purple gradients (Smule, every AI-generated music app)
-- Teal + white (generic productivity)
-- Bright neon anything — this is intimate, not a concert
-- Light mode as default (lyrics reading in low light is a primary use case)
+- Pure black or white — too harsh for a screen users stare at while vulnerable
+- Bright saturated purple — reads as "AI product" or "Smule clone"
+- Warm amber/gold — the original design brief called for this, but in practice the neutral-cool palette creates a more focused, less "cozy-app" feel that better suits the recording context
+- Any colour that reads as energetic, social, or celebratory
 
 ---
 
@@ -140,11 +162,34 @@ Less is more. The user is in a focused, slightly anxious state. Unexpected anima
 The app has two primary screens. Each has a single job. Design accordingly.
 
 **Library screen:**
-- Generous padding (20dp horizontal)
-- Song list items: tall enough to tap without precision (min 56dp height)
-- Song name: `DM Sans SemiBold`, 16sp
-- Date/metadata: `DM Sans Regular`, 13sp, `text-secondary`
-- "+" button: top-right header, accent gold color, large tap target
+
+The library is a personal, private workspace — not a feed. The design reflects that: no social signals, no discovery noise, just the user's songs and a fast path back into them.
+
+*Hero card:*
+- Full-width card (16dp horizontal margin), 200dp tall, border-radius 18
+- Always shows the most recently recorded song (falls back to most recently created if no recordings exist)
+- Artwork fills the card as background; a dark scrim (`rgba(0,0,0,0.38)`) over the bottom third makes text legible without obscuring the image
+- Eyebrow: `DM Sans SemiBold`, 11sp, uppercase, letter-spacing 0.8 — "Last Recorded" or "Recently Added"
+- Title: `DM Sans SemiBold`, 22sp
+- Inline CTA pill (accent background, dark text): "Sing again" or "Start recording" — this is the primary tap target on the screen, designed to get the user back into flow in one tap
+- When no artwork is present: `surface` background (`#161618`) — the card stays, the texture changes. Never show a broken image placeholder at hero scale.
+
+*Section header + filter chips:*
+- "Your Library" label (`DM Sans SemiBold`, 17sp) + song count in `text-disabled` — tells the user they're in a personal space, not a catalog
+- Three filter chips below: **All / Recorded / Drafts** — border-only in inactive state (`border` color), accent-tinted background + accent border + accent text in active state. These chips are the only navigation within the library — keep them.
+
+*Song cards:*
+- Each song is a card, not a list row. Card background: `surface-raised` at ~62% opacity with `border` at ~65% opacity and `border-radius: 16`. Subtle shadow (`0, 4, 12, 0.14`). This creates a sense of depth — the library feels like a collection of objects, not a spreadsheet.
+- Card has two zones:
+  1. **Top row (pressable):** Artwork thumbnail (56dp, `border-radius: 12`) + title + lyrics preview line + metadata row. Tapping opens review (if recorded) or editor. Press state: `opacity 0.8` — calm feedback, not a bounce.
+  2. **Action bar (always visible, not pressable as a unit):** Separated from the top row by a hairline divider (`border` color at 50%). Contains: **Sing** (accent pill with mic icon — primary action), **Play** (conditional, only if recording exists), **Edit**, and a right-aligned **Delete** (trash icon, `text-disabled`). Each action is its own `Pressable` with comfortable padding.
+- Scroll speed badge in the metadata row, right-aligned: small rounded pill (`border-radius: 6`), `border` background, `text-disabled` text, 11sp, capitalized. Shows "Slow", "Medium", or "Fast". This is useful information for the user who has tuned a song — they can see it without opening the song.
+- Recorded indicator: 5dp accent dot, bottom-right corner of artwork thumbnail.
+- 10dp vertical margin between cards. No separator lines between cards — the cards themselves create the visual separation.
+
+*FAB:*
+- Fixed bottom-right, 56dp diameter, `accent` background, white `+` icon. Not top-right header — the library can grow long and a bottom FAB is always in thumb reach.
+- Shadow uses `accent` as shadow color (not black) — a subtle glow that grounds the button.
 
 **Song screen:**
 - Name input: small, top of screen, `text-secondary` placeholder ("Song name...")
@@ -171,10 +216,12 @@ The user just sang something. They are listening back, probably feeling exposed.
 ## 8. What This App Should Never Look Like
 
 - A karaoke app with neon stage lighting
-- A social app with gradients, cards, and avatars
+- A social feed with avatars, likes, and stranger-facing profiles
 - A DAW with sliders, knobs, and meters
 - A generic productivity app with white backgrounds and blue primary buttons
 - A startup landing page dropped into mobile
+
+Cards are fine — the library uses them deliberately. What to avoid is cards that feel *public* or *social*: visible play counts, follower counts, share prompts on every surface, anything that implies an audience. Every card in this app represents something the user made for themselves.
 
 If a screenshot of this app looks like it could belong to Smule, StarMaker, or any generic music app — it's wrong.
 

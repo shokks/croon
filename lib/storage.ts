@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import type { Song, SongRecording } from '@/types';
+import type { ExternalSongLinks, Song, SongRecording } from '@/types';
 
 const SONGS_STORAGE_KEY = 'lyricloop:songs';
 
@@ -11,6 +11,33 @@ function normalizeRecording(value: unknown): SongRecording | undefined {
     return undefined;
   }
   return { uri: r.uri, durationMs: r.durationMs, recordedAt: r.recordedAt };
+}
+
+function normalizeExternalLinks(value: unknown): ExternalSongLinks | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const raw = value as Record<string, unknown>;
+
+  const result: ExternalSongLinks = {};
+
+  if (raw.spotify && typeof raw.spotify === 'object' && !Array.isArray(raw.spotify)) {
+    const s = raw.spotify as Record<string, unknown>;
+    result.spotify = {
+      ...(typeof s.uri === 'string' ? { uri: s.uri } : {}),
+      ...(typeof s.url === 'string' ? { url: s.url } : {}),
+    };
+  }
+
+  if (raw.appleMusic && typeof raw.appleMusic === 'object' && !Array.isArray(raw.appleMusic)) {
+    const a = raw.appleMusic as Record<string, unknown>;
+    if (typeof a.url === 'string') result.appleMusic = { url: a.url };
+  }
+
+  if (raw.youtube && typeof raw.youtube === 'object' && !Array.isArray(raw.youtube)) {
+    const y = raw.youtube as Record<string, unknown>;
+    if (typeof y.url === 'string') result.youtube = { url: y.url };
+  }
+
+  return result;
 }
 
 function normalizeSongs(value: unknown): Song[] {
@@ -33,7 +60,7 @@ function normalizeSongs(value: unknown): Song[] {
       typeof candidate.createdAt === 'string'
     );
   }).map((item) => {
-    const candidate = item as Song & { recording?: unknown; syncedLyrics?: unknown; artworkUrl?: unknown };
+    const candidate = item as Song & { recording?: unknown; syncedLyrics?: unknown; artworkUrl?: unknown; artist?: unknown; externalLinks?: unknown };
     return {
       ...candidate,
       recording: normalizeRecording(candidate.recording),
@@ -43,6 +70,10 @@ function normalizeSongs(value: unknown): Song[] {
       artworkUrl: typeof candidate.artworkUrl === 'string'
         ? candidate.artworkUrl
         : undefined,
+      artist: typeof candidate.artist === 'string'
+        ? candidate.artist
+        : undefined,
+      externalLinks: normalizeExternalLinks(candidate.externalLinks),
     };
   });
 }
