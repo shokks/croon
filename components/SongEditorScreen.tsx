@@ -90,10 +90,12 @@ export function SongEditorScreen({
   // Prefill support (new songs from search)
   const syncedLyricsRef = useRef<string | null>(prefillSyncedLyrics?.trim() || null);
   const artworkUrlRef = useRef<string | null>(prefillArtworkUrl?.trim() || null);
-  const externalLinksRef = useRef<ExternalSongLinks | null>((() => {
+  const parsedPrefillLinks: ExternalSongLinks | null = (() => {
     if (!prefillExternalLinks) return null;
     try { return JSON.parse(prefillExternalLinks) as ExternalSongLinks; } catch { return null; }
-  })());
+  })();
+  const externalLinksRef = useRef<ExternalSongLinks | null>(parsedPrefillLinks);
+  const [externalLinksState, setExternalLinksState] = useState<ExternalSongLinks | null>(parsedPrefillLinks);
   const [isPrefilled, setIsPrefilled] = useState(
     lyricsSource === 'lrclib' && Boolean(prefillLyrics?.trim())
   );
@@ -155,6 +157,7 @@ export function SongEditorScreen({
       artworkUrlRef.current = song.artworkUrl ?? null;
       syncedLyricsRef.current = song.syncedLyrics ?? null;
       externalLinksRef.current = song.externalLinks ?? null;
+      setExternalLinksState(song.externalLinks ?? null);
       isLoadedRef.current = true;
       setIsLoading(false);
     })();
@@ -302,20 +305,19 @@ export function SongEditorScreen({
   }, []);
 
   const availableProviders = useMemo<{ provider: MusicProvider; icon: string; color: string }[]>(() => {
-    const links = externalLinksRef.current;
-    if (!links) return [];
+    if (!externalLinksState) return [];
     return [
-      links.spotify?.url || links.spotify?.uri
+      externalLinksState.spotify?.url || externalLinksState.spotify?.uri
         ? { provider: 'spotify', icon: 'spotify', color: '#1DB954' }
         : null,
-      links.appleMusic?.url
+      externalLinksState.appleMusic?.url
         ? { provider: 'appleMusic', icon: 'apple', color: '#FA2D48' }
         : null,
-      links.youtube?.url
+      externalLinksState.youtube?.url
         ? { provider: 'youtube', icon: 'youtube', color: '#FF0000' }
         : null,
     ].filter(Boolean) as { provider: MusicProvider; icon: string; color: string }[];
-  }, []);
+  }, [externalLinksState]);
 
   const handleRecord = useCallback(async () => {
     if (!lyricsValueRef.current.trim()) return;
@@ -338,13 +340,18 @@ export function SongEditorScreen({
       style={styles.headerPencil}>
       <Text style={styles.headerDoneLabel}>Done</Text>
     </Pressable>
-  ) : songId ? (
+  ) : (
     <View style={styles.headerActions}>
-      <Pressable hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={handleDeleteSong} style={styles.headerPencil}>
-        <Feather color={Palette.textDisabled} name="trash-2" size={17} />
+      <Pressable hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => lyricsRef.current?.focus()} style={styles.headerPencil}>
+        <Feather color={Palette.accent} name="edit-2" size={17} />
       </Pressable>
+      {songId ? (
+        <Pressable hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={handleDeleteSong} style={styles.headerPencil}>
+          <Feather color={Palette.textDisabled} name="trash-2" size={17} />
+        </Pressable>
+      ) : null}
     </View>
-  ) : null;
+  );
 
   if (isLoading) {
     return (
@@ -424,7 +431,7 @@ export function SongEditorScreen({
             contentContainerStyle={styles.lyricsPreviewContent}
             showsVerticalScrollIndicator={false}>
             <Text style={lyrics ? styles.lyricsPreviewText : styles.lyricsPreviewPlaceholder}>
-              {lyrics || 'Tap the pencil to add lyrics...'}
+              {lyrics || 'Tap ✏ to add lyrics...'}
             </Text>
           </ScrollView>
         </Animated.View>
