@@ -1,0 +1,9 @@
+- generic [ref=e88]:
+  - generic [ref=e91] [cursor=pointer]: 
+  - generic [ref=e94]: Line one\nLine two\nLine three
+  - generic [ref=e95]:
+    - generic [ref=e97] [cursor=pointer]: Ballad
+    - generic [ref=e99] [cursor=pointer]: Normal
+    - generic [ref=e101] [cursor=pointer]: Uptempo
+  - button "Start recording" [ref=e103] [cursor=pointer]:
+    - generic [ref=e106]: 

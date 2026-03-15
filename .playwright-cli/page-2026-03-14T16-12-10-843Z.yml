@@ -1,0 +1,34 @@
+- generic [ref=e107]:
+  - generic [ref=e109]:
+    - img [ref=e110]
+    - generic [ref=e115]: LyricLoop
+  - generic [ref=e118]:
+    - generic [ref=e120]:
+      - generic [ref=e122]:
+        - generic [ref=e127] [cursor=pointer]:
+          - generic [ref=e128]: Recently Added
+          - generic [ref=e129]: Test Song
+          - generic [ref=e130]:
+            - generic [ref=e131]: 
+            - generic [ref=e132]: Start recording
+        - generic [ref=e133]:
+          - generic [ref=e134]: Your Library
+          - generic [ref=e135]: "1"
+        - generic [ref=e136]:
+          - generic [ref=e138] [cursor=pointer]: All
+          - generic [ref=e140] [cursor=pointer]: Recorded
+          - generic [ref=e142] [cursor=pointer]: Drafts
+      - generic [ref=e145]:
+        - generic [ref=e146] [cursor=pointer]:
+          - generic [ref=e149]: 
+          - generic [ref=e150]:
+            - generic [ref=e151]: Test Song
+            - generic [ref=e152]: Tester
+            - generic [ref=e153]:
+              - generic [ref=e154]: Today, 16:52
+              - generic [ref=e156]: medium
+        - button " Sing" [ref=e158] [cursor=pointer]:
+          - generic [ref=e159]: 
+          - generic [ref=e160]: Sing
+    - button "Create a new song" [ref=e161] [cursor=pointer]:
+      - generic [ref=e162]: 

@@ -89,6 +89,16 @@ Specifically:
 
 ## 5. Screen Map
 
+### Current Route Files (Expo Router)
+
+- `/` → `app/index.tsx`
+- `/modal` → `app/modal.tsx`
+- `/song/[id]` → `app/song/[id].tsx`
+- `/song/new` → `app/song/new.tsx`
+- `/song/search` → `app/song/search.tsx`
+- `/song/record/[id]` → `app/song/record/[id].tsx`
+- Shared layout/navigation shell → `app/_layout.tsx`
+
 ```
 ┌──────────────┐     ┌─────────────────┐
 │   Library    │────▶│   Song Setup    │

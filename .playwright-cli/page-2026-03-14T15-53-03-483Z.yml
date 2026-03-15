@@ -1,0 +1,22 @@
+- generic [ref=e54]:
+  - generic:
+    - generic:
+      - generic:
+        - generic [ref=e57] [cursor=pointer]: 
+        - heading "Test Song" [level=1] [ref=e83]
+        - generic [ref=e61] [cursor=pointer]: 
+  - generic [ref=e64]:
+    - textbox "Song name..." [ref=e65]: Test Song
+    - textbox "Artist" [active] [ref=e66]: Tester
+    - generic [ref=e68]:
+      - generic:
+        - textbox "Paste or type your lyrics..."
+      - generic [ref=e72]: Tap ✏ to add lyrics...
+    - generic [ref=e73]:
+      - generic [ref=e74]:
+        - generic [ref=e76] [cursor=pointer]: Ballad
+        - generic [ref=e78] [cursor=pointer]: Normal
+        - generic [ref=e80] [cursor=pointer]: Uptempo
+      - generic:
+        - generic [ref=e81]: 
+        - generic [ref=e82]: Start Recording

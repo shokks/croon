@@ -1,0 +1,9 @@
+- generic [ref=e5]:
+  - generic:
+    - generic:
+      - generic:
+        - generic [ref=e8] [cursor=pointer]: 
+        - heading "Find a Song" [level=1] [ref=e9]
+  - generic [ref=e12]:
+    - textbox "Search for a song or artist..." [ref=e13]
+    - generic [ref=e15] [cursor=pointer]: Skip / enter manually

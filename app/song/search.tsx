@@ -107,12 +107,21 @@ export default function SongSearchScreen() {
       </Pressable>
 
       {isLoading ? (
-        <ActivityIndicator color={Palette.accent} style={styles.spinner} />
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator color={Palette.accent} />
+          <Text style={styles.loadingText}>Searching...</Text>
+        </View>
       ) : null}
 
-      {showEmpty || showError ? (
+      {showEmpty ? (
         <Text style={styles.emptyText}>
-          No results. Try a different search or skip to enter manually.
+          No results for that search. Try different keywords, or skip to enter manually.
+        </Text>
+      ) : null}
+
+      {showError ? (
+        <Text style={styles.errorText}>
+          Search is unavailable right now. You can still enter a song manually below.
         </Text>
       ) : null}
 
@@ -168,11 +177,28 @@ const styles = StyleSheet.create({
     fontFamily: 'DM-Sans',
     fontSize: 14,
   },
-  spinner: {
+  loadingWrap: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
     marginTop: 24,
+    paddingHorizontal: 20,
+  },
+  loadingText: {
+    color: Palette.textDisabled,
+    fontFamily: 'DM-Sans',
+    fontSize: 14,
   },
   emptyText: {
     color: Palette.textSecondary,
+    fontFamily: 'DM-Sans',
+    fontSize: 14,
+    marginTop: 24,
+    paddingHorizontal: 20,
+    textAlign: 'center',
+  },
+  errorText: {
+    color: withOpacity(Palette.recordRed, 0.85),
     fontFamily: 'DM-Sans',
     fontSize: 14,
     marginTop: 24,

@@ -3,7 +3,6 @@ import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import * as Sharing from 'expo-sharing';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Alert,
   ImageBackground,
   LayoutChangeEvent,
   Platform,
@@ -205,7 +204,7 @@ export function PostRecordingView({
       name: songName,
       artist: songArtist,
     } as Parameters<typeof openExternalMusicLink>[1]).then(({ opened }) => {
-      if (!opened) Alert.alert('Link not available for this song.');
+      if (!opened) setErrorMessage('Link not available for this song.');
     });
   }, [externalLinks, songName, songArtist]);
 
@@ -239,7 +238,7 @@ export function PostRecordingView({
         showsVerticalScrollIndicator={false}>
 
         {/* Hero card */}
-        <Pressable onPress={() => void handleBack()} style={styles.heroCard}>
+        <View style={styles.heroCard}>
           <ImageBackground
             imageStyle={styles.heroImage}
             source={artworkUrl ? { uri: artworkUrl } : undefined}
@@ -247,11 +246,16 @@ export function PostRecordingView({
 
             {/* Top row: back + edit */}
             <View style={[styles.heroTopRow, { paddingTop: insets.top + 12 }]}>
-              <View style={styles.heroBackBtn}>
+              <Pressable
+                accessibilityLabel="Go back"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                onPress={() => void handleBack()}
+                style={styles.heroBackBtn}>
                 <Feather color={Palette.textPrimary} name="chevron-left" size={24} />
-              </View>
+              </Pressable>
               {onEdit ? (
                 <Pressable
+                  accessibilityLabel="Edit song"
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   onPress={onEdit}
                   style={styles.heroEditBtn}>
@@ -279,7 +283,7 @@ export function PostRecordingView({
               ) : null}
             </View>
           </ImageBackground>
-        </Pressable>
+        </View>
 
         {/* Waveform card */}
         <View style={styles.waveformCard}>
@@ -298,7 +302,10 @@ export function PostRecordingView({
           </View>
           <View style={styles.waveformMeta}>
             <Text style={styles.duration}>{formatDuration(duration)}</Text>
-            <Pressable onPress={() => void handlePlayPress()} style={styles.waveformPlayBtn}>
+            <Pressable
+              accessibilityLabel={isPlaying ? 'Stop playback' : 'Play recording'}
+              onPress={() => void handlePlayPress()}
+              style={styles.waveformPlayBtn}>
               <Feather color={Palette.background} name={isPlaying ? 'square' : 'play'} size={22} />
             </Pressable>
           </View>
@@ -333,9 +340,10 @@ export function PostRecordingView({
           </View>
         ) : null}
 
-        {/* Sing Again + Share */}
+        {/* Action row */}
         <View style={styles.actionRow}>
           <Pressable
+            accessibilityLabel="Sing Again"
             onPress={() => void handleReRecord()}
             style={({ pressed }) => [styles.actionBtn, styles.actionBtnSing, pressed && styles.actionBtnPressed]}>
             <Feather color={Palette.accent} name="mic" size={16} />
@@ -343,12 +351,21 @@ export function PostRecordingView({
           </Pressable>
 
           <Pressable
+            accessibilityLabel="Share recording"
             onPress={() => void handleSharePress()}
             style={({ pressed }) => [styles.actionBtn, styles.actionBtnSecondary, pressed && styles.actionBtnPressed]}>
             <Feather color={Palette.textSecondary} name="share" size={16} />
             <Text style={styles.actionLabel}>Share</Text>
           </Pressable>
         </View>
+
+        {/* Done — explicit primary exit */}
+        <Pressable
+          accessibilityLabel="Done, return to songs"
+          onPress={() => void handleBack()}
+          style={({ pressed }) => [styles.doneBtn, pressed && styles.doneBtnPressed]}>
+          <Text style={styles.doneBtnText}>Done</Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -580,5 +597,25 @@ const styles = StyleSheet.create({
   },
   actionLabelSing: {
     color: Palette.accent,
+  },
+
+  // Done button
+  doneBtn: {
+    alignItems: 'center',
+    backgroundColor: Palette.accent,
+    borderRadius: 14,
+    paddingVertical: 16,
+    shadowColor: Palette.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+  },
+  doneBtnPressed: {
+    opacity: 0.85,
+  },
+  doneBtnText: {
+    color: Palette.background,
+    fontFamily: 'DM-Sans-SemiBold',
+    fontSize: 16,
   },
 });

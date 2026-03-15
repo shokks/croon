@@ -41,11 +41,7 @@ function formatDuration(ms: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-const SPEED_OPTIONS: { label: string; value: ScrollSpeed }[] = [
-  { label: 'Ballad', value: 'slow' },
-  { label: 'Normal', value: 'medium' },
-  { label: 'Uptempo', value: 'fast' },
-];
+type SaveState = 'idle' | 'unsaved' | 'saving' | 'saved';
 
 export function SongEditorScreen({
   songId,
@@ -63,11 +59,14 @@ export function SongEditorScreen({
   const [name, setName] = useState('');
   const [artist, setArtist] = useState('');
   const [lyrics, setLyrics] = useState('');
-  const [scrollSpeed, setScrollSpeed] = useState<ScrollSpeed>('medium');
   const [isLoading, setIsLoading] = useState(Boolean(songId));
   const [isMissingSong, setIsMissingSong] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [lastRecording, setLastRecording] = useState<SongRecording | null>(null);
+  const [saveState, setSaveState] = useState<SaveState>('idle');
+  const [pendingDelete, setPendingDelete] = useState(false);
+  const [linkError, setLinkError] = useState<string | null>(null);
+  const linkErrorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const miniPlayer = useAudioPlayer();
   const miniPlayerStatus = useAudioPlayerStatus(miniPlayer);
@@ -77,6 +76,8 @@ export function SongEditorScreen({
   const artistInputRef = useRef<TextInput>(null);
   const lyricsRef = useRef<TextInput>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const skipAutosaveRef = useRef(false);
 
   // Refs tracking latest values so doSave never captures stale state
   const nameRef = useRef('');
@@ -145,7 +146,6 @@ export function SongEditorScreen({
       setName(song.name);
       setArtist(song.artist ?? '');
       setLyrics(song.lyrics);
-      setScrollSpeed(song.scrollSpeed);
       setLastRecording(song.recording ?? null);
       nameRef.current = song.name;
       artistRef.current = song.artist ?? '';
@@ -192,15 +192,67 @@ export function SongEditorScreen({
     };
   }, [modeAnim]);
 
-  // Load recording into mini-player when available (native only)
+  // Auto-focus lyrics for manual entry (came from search with no lyrics found)
+  useEffect(() => {
+    if (lyricsSource === 'manual' && !prefillLyrics?.trim()) {
+      const t = setTimeout(() => lyricsRef.current?.focus(), 350);
+      return () => clearTimeout(t);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Native: load recording into mini-player
   useEffect(() => {
     if (Platform.OS === 'web' || !lastRecording?.uri) return;
     miniPlayer.replace(lastRecording.uri);
   }, [miniPlayer, lastRecording?.uri]);
 
+  // Web: HTMLAudioElement mini-player
+  const miniWebAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [isWebPlaying, setIsWebPlaying] = useState(false);
+
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !lastRecording?.uri) return;
+
+    if (miniWebAudioRef.current) {
+      miniWebAudioRef.current.pause();
+      miniWebAudioRef.current = null;
+    }
+    setIsWebPlaying(false);
+
+    const audio = new Audio(lastRecording.uri);
+    audio.preload = 'auto';
+    audio.addEventListener('play', () => setIsWebPlaying(true));
+    audio.addEventListener('pause', () => setIsWebPlaying(false));
+    audio.addEventListener('ended', () => { setIsWebPlaying(false); audio.currentTime = 0; });
+    audio.load();
+    miniWebAudioRef.current = audio;
+
+    return () => {
+      audio.pause();
+      if (miniWebAudioRef.current === audio) miniWebAudioRef.current = null;
+    };
+  }, [lastRecording?.uri]);
+
+  const miniIsPlaying = Platform.OS === 'web' ? isWebPlaying : miniPlayerStatus.playing;
+
   const handleMiniPlayerPress = useCallback(async () => {
-    if (!lastRecording?.uri || Platform.OS === 'web') return;
+    if (!lastRecording?.uri) return;
     try {
+      if (Platform.OS === 'web') {
+        const webAudio = miniWebAudioRef.current;
+        if (!webAudio) return;
+        if (isWebPlaying) {
+          webAudio.pause();
+          webAudio.currentTime = 0;
+          return;
+        }
+        if (webAudio.duration > 0 && webAudio.currentTime >= webAudio.duration - 0.01) {
+          webAudio.currentTime = 0;
+        }
+        await webAudio.play();
+        return;
+      }
       if (miniPlayerStatus.playing) {
         miniPlayer.pause();
         await miniPlayer.seekTo(0);
@@ -213,15 +265,20 @@ export function SongEditorScreen({
     } catch {
       // silent fail — playback unavailable
     }
-  }, [lastRecording?.uri, miniPlayer, miniPlayerStatus.didJustFinish, miniPlayerStatus.playing]);
+  }, [lastRecording?.uri, isWebPlaying, miniPlayer, miniPlayerStatus.didJustFinish, miniPlayerStatus.playing]);
 
   // Auto-save — reads from refs so it is always stable and never stale
-  const doSave = useCallback(async () => {
+  const doSave = useCallback(async (silent = false) => {
+    if (skipAutosaveRef.current) {
+      return;
+    }
+
     if (!createdAtRef.current) {
       // New song: only save if the user has actually typed something
       if (!nameRef.current.trim() && !lyricsValueRef.current.trim()) return;
       createdAtRef.current = new Date().toISOString();
     }
+    if (!silent) setSaveState('saving');
     await saveSong({
       id: stableSongId.current,
       name: nameRef.current.trim() || 'Untitled song',
@@ -234,22 +291,36 @@ export function SongEditorScreen({
       artworkUrl: artworkUrlRef.current ?? undefined,
       externalLinks: externalLinksRef.current ?? undefined,
     });
+    if (!silent) {
+      setSaveState('saved');
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+      savedTimerRef.current = setTimeout(() => setSaveState('idle'), 2000);
+    }
   }, []);
 
   const scheduleSave = useCallback(() => {
+    setSaveState('unsaved');
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => void doSave(), 400);
   }, [doSave]);
 
-  // Flush save when leaving the screen — stable callback, reads from refs
+  // On screen gain-focus: reset editing state (handles web component caching and native stale state)
+  // On screen lose-focus: dismiss keyboard and flush save silently
   useFocusEffect(
     useCallback(() => {
+      Keyboard.dismiss();
+      setIsEditing(false);
+      setPendingDelete(false);
+      modeAnim.setValue(0);
+
       return () => {
+        Keyboard.dismiss();
+        setPendingDelete(false);
         if (!isLoadedRef.current) return; // existing song not yet loaded, skip
         if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-        void doSave();
+        void doSave(true);
       };
-    }, [doSave])
+    }, [doSave, modeAnim])
   );
 
   const handleNameChange = (text: string) => {
@@ -271,32 +342,38 @@ export function SongEditorScreen({
     scheduleSave();
   };
 
-  const handleScrollSpeedChange = useCallback(
-    (speed: ScrollSpeed) => {
-      setScrollSpeed(speed);
-      scrollSpeedRef.current = speed;
-      scheduleSave();
-    },
-    [scheduleSave]
-  );
+  const performDelete = useCallback(async () => {
+    skipAutosaveRef.current = true;
+    try {
+      await deleteSong(stableSongId.current);
+      router.back();
+    } catch {
+      skipAutosaveRef.current = false;
+      setPendingDelete(false);
+    }
+  }, [router]);
 
   const handleDeleteSong = useCallback(() => {
+    if (Platform.OS === 'web') {
+      // Use in-app confirmation on web — browser dialogs (window.confirm) can be silently blocked
+      setPendingDelete(true);
+      return;
+    }
     Alert.alert(
       'Delete song',
       `"${nameRef.current.trim() || 'Untitled song'}" will be permanently deleted.`,
       [
         { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            await deleteSong(stableSongId.current);
-            router.replace('/' as Href);
-          },
-        },
+        { text: 'Delete', style: 'destructive', onPress: () => void performDelete() },
       ]
     );
-  }, [router]);
+  }, [performDelete]);
+
+  const showLinkError = useCallback((msg: string) => {
+    if (linkErrorTimerRef.current) clearTimeout(linkErrorTimerRef.current);
+    setLinkError(msg);
+    linkErrorTimerRef.current = setTimeout(() => setLinkError(null), 3000);
+  }, []);
 
   const handleOpenProvider = useCallback((provider: MusicProvider) => {
     void openExternalMusicLink(provider, {
@@ -304,9 +381,9 @@ export function SongEditorScreen({
       name: nameRef.current,
       artist: artistRef.current,
     } as Parameters<typeof openExternalMusicLink>[1]).then(({ opened }) => {
-      if (!opened) Alert.alert('Link not available for this song.');
+      if (!opened) showLinkError('Link not available for this song.');
     });
-  }, []);
+  }, [showLinkError]);
 
   const availableProviders = useMemo<{ provider: MusicProvider; icon: string; color: string }[]>(() => {
     if (!externalLinksState) return [];
@@ -337,23 +414,35 @@ export function SongEditorScreen({
   const hasLyrics = lyrics.trim().length > 0;
   const bottomInset = Math.max(insets.bottom, 16);
 
-  const headerRight = isEditing ? (
-    <Pressable
-      hitSlop={{ top: 8, bottom: 8, left: 16, right: 8 }}
-      onPress={() => Keyboard.dismiss()}
-      style={styles.headerPencil}>
-      <Text style={styles.headerDoneLabel}>Done</Text>
-    </Pressable>
-  ) : (
+  const saveStateLabel =
+    saveState === 'unsaved' ? 'Unsaved' :
+    saveState === 'saving' ? 'Saving...' :
+    saveState === 'saved' ? 'Saved' : null;
+
+  const headerRight = (
     <View style={styles.headerActions}>
-      <Pressable hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => lyricsRef.current?.focus()} style={styles.headerPencil}>
-        <Feather color={Palette.accent} name="edit-2" size={17} />
-      </Pressable>
-      {songId ? (
-        <Pressable hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={handleDeleteSong} style={styles.headerPencil}>
-          <Feather color={Palette.textDisabled} name="trash-2" size={17} />
-        </Pressable>
+      {saveStateLabel ? (
+        <Text style={[styles.saveStateText, saveState === 'unsaved' && styles.saveStateUnsaved]}>
+          {saveStateLabel}
+        </Text>
       ) : null}
+      {isEditing ? (
+        <Pressable
+          accessibilityLabel="Done editing"
+          hitSlop={{ top: 8, bottom: 8, left: 16, right: 8 }}
+          onPress={() => Keyboard.dismiss()}
+          style={styles.headerPencil}>
+          <Text style={styles.headerDoneLabel}>Done</Text>
+        </Pressable>
+      ) : (
+        <Pressable
+          accessibilityLabel="Edit lyrics"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          onPress={() => lyricsRef.current?.focus()}
+          style={styles.headerPencil}>
+          <Feather color={Palette.accent} name="edit-2" size={17} />
+        </Pressable>
+      )}
     </View>
   );
 
@@ -434,8 +523,12 @@ export function SongEditorScreen({
           <ScrollView
             contentContainerStyle={styles.lyricsPreviewContent}
             showsVerticalScrollIndicator={false}>
-            <Text style={lyrics ? styles.lyricsPreviewText : styles.lyricsPreviewPlaceholder}>
-              {lyrics || 'Tap ✏ to add lyrics...'}
+            <Text
+              accessibilityHint="Tap to edit"
+              accessibilityRole="button"
+              onPress={() => lyricsRef.current?.focus()}
+              style={lyrics ? styles.lyricsPreviewText : styles.lyricsPreviewPlaceholder}>
+              {lyrics || 'Tap to add lyrics...'}
             </Text>
           </ScrollView>
         </Animated.View>
@@ -449,6 +542,7 @@ export function SongEditorScreen({
       {/* Last take mini-player card — only when recording exists and keyboard is hidden */}
       {lastRecording && !isEditing && (
         <Pressable
+          accessibilityLabel={miniIsPlaying ? 'Pause last take' : 'Play last take'}
           onPress={() => void handleMiniPlayerPress()}
           style={({ pressed }) => [styles.miniPlayerCard, pressed && styles.miniPlayerCardPressed]}>
           <View style={styles.miniPlayerIconWrap}>
@@ -461,7 +555,7 @@ export function SongEditorScreen({
           <View style={styles.miniPlayerPlayBtn}>
             <Feather
               color={Palette.accent}
-              name={miniPlayerStatus.playing ? 'pause' : 'play'}
+              name={miniIsPlaying ? 'pause' : 'play'}
               size={20}
             />
           </View>
@@ -469,37 +563,26 @@ export function SongEditorScreen({
       )}
 
       {!isEditing && availableProviders.length > 0 ? (
-        <View style={styles.providerRow}>
-          {availableProviders.map(({ provider, icon, color }) => (
-            <Pressable
-              key={provider}
-              hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
-              onPress={() => handleOpenProvider(provider)}
-              style={({ pressed }) => [styles.providerBtn, pressed && styles.providerBtnPressed]}>
-              <FontAwesome5 color={color} name={icon} size={18} />
-            </Pressable>
-          ))}
-        </View>
-      ) : null}
-
-      {/* Bottom bar: speed chips + record CTA */}
-      <View style={[styles.bottomBar, { paddingBottom: bottomInset + 10 }]}>
-        {!isEditing && (
-          <View style={styles.speedRow}>
-            {SPEED_OPTIONS.map((opt) => (
+        <View style={styles.providerSection}>
+          <View style={styles.providerRow}>
+            {availableProviders.map(({ provider, icon, color }) => (
               <Pressable
-                key={opt.value}
-                onPress={() => handleScrollSpeedChange(opt.value)}
-                style={[styles.speedChip, scrollSpeed === opt.value && styles.speedChipActive]}>
-                <Text style={[styles.speedChipText, scrollSpeed === opt.value && styles.speedChipTextActive]}>
-                  {opt.label}
-                </Text>
+                key={provider}
+                hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
+                onPress={() => handleOpenProvider(provider)}
+                style={({ pressed }) => [styles.providerBtn, pressed && styles.providerBtnPressed]}>
+                <FontAwesome5 color={color} name={icon} size={18} />
               </Pressable>
             ))}
           </View>
-        )}
+          {linkError ? <Text style={styles.linkErrorText}>{linkError}</Text> : null}
+        </View>
+      ) : null}
 
+      {/* Bottom bar: record CTA + optional delete */}
+      <View style={[styles.bottomBar, { paddingBottom: bottomInset + 10 }]}>
         <Pressable
+          accessibilityLabel={lastRecording ? 'Record Again' : 'Start Recording'}
           disabled={!hasLyrics}
           onPress={() => void handleRecord()}
           style={({ pressed }) => [
@@ -516,6 +599,35 @@ export function SongEditorScreen({
             {lastRecording ? 'Record Again' : 'Start Recording'}
           </Text>
         </Pressable>
+
+        {songId && !isEditing ? (
+          pendingDelete ? (
+            <View style={styles.deleteConfirmRow}>
+              <Text style={styles.deleteConfirmLabel}>Delete this song?</Text>
+              <View style={styles.deleteConfirmActions}>
+                <Pressable
+                  accessibilityLabel="Cancel delete"
+                  onPress={() => setPendingDelete(false)}
+                  style={({ pressed }) => [styles.deleteConfirmBtn, styles.deleteCancelBtn, pressed && styles.deleteBtnPressed]}>
+                  <Text style={styles.deleteCancelText}>Cancel</Text>
+                </Pressable>
+                <Pressable
+                  accessibilityLabel="Confirm delete"
+                  onPress={() => void performDelete()}
+                  style={({ pressed }) => [styles.deleteConfirmBtn, styles.deleteConfirmDestructiveBtn, pressed && styles.deleteBtnPressed]}>
+                  <Text style={styles.deleteConfirmDestructiveText}>Delete</Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : (
+            <Pressable
+              accessibilityLabel="Delete this song"
+              onPress={handleDeleteSong}
+              style={({ pressed }) => [styles.deleteBtn, pressed && styles.deleteBtnPressed]}>
+              <Text style={styles.deleteBtnText}>Delete Song</Text>
+            </Pressable>
+          )
+        ) : null}
       </View>
     </KeyboardAvoidingView>
   );
@@ -661,33 +773,6 @@ const styles = StyleSheet.create({
     paddingTop: 14,
   },
 
-  // Speed chips (same pill language as library filter chips)
-  speedRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  speedChip: {
-    alignItems: 'center',
-    borderColor: Palette.border,
-    borderRadius: 20,
-    borderWidth: 1,
-    flex: 1,
-    paddingVertical: 7,
-  },
-  speedChipActive: {
-    backgroundColor: withOpacity(Palette.accent, 0.15),
-    borderColor: withOpacity(Palette.accent, 0.5),
-  },
-  speedChipText: {
-    color: Palette.textSecondary,
-    fontFamily: 'DM-Sans',
-    fontSize: 14,
-  },
-  speedChipTextActive: {
-    color: Palette.accent,
-    fontFamily: 'DM-Sans-SemiBold',
-  },
-
   // Record CTA
   recordCta: {
     alignItems: 'center',
@@ -718,11 +803,66 @@ const styles = StyleSheet.create({
     color: Palette.textDisabled,
   },
 
+  // Delete button + inline confirmation
+  deleteBtn: {
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  deleteBtnPressed: {
+    opacity: 0.5,
+  },
+  deleteBtnText: {
+    color: Palette.recordRed,
+    fontFamily: 'DM-Sans',
+    fontSize: 14,
+  },
+  deleteConfirmRow: {
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 4,
+  },
+  deleteConfirmLabel: {
+    color: Palette.textSecondary,
+    fontFamily: 'DM-Sans',
+    fontSize: 13,
+  },
+  deleteConfirmActions: {
+    flexDirection: 'row',
+    gap: 10,
+    width: '100%',
+  },
+  deleteConfirmBtn: {
+    alignItems: 'center',
+    borderRadius: 10,
+    flex: 1,
+    paddingVertical: 10,
+  },
+  deleteCancelBtn: {
+    backgroundColor: withOpacity(Palette.surfaceRaised, 0.9),
+    borderColor: withOpacity(Palette.border, 0.8),
+    borderWidth: 1,
+  },
+  deleteCancelText: {
+    color: Palette.textSecondary,
+    fontFamily: 'DM-Sans-SemiBold',
+    fontSize: 14,
+  },
+  deleteConfirmDestructiveBtn: {
+    backgroundColor: withOpacity(Palette.recordRed, 0.12),
+    borderColor: withOpacity(Palette.recordRed, 0.35),
+    borderWidth: 1,
+  },
+  deleteConfirmDestructiveText: {
+    color: Palette.recordRed,
+    fontFamily: 'DM-Sans-SemiBold',
+    fontSize: 14,
+  },
+
   // Header controls
   headerActions: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 4,
+    gap: 8,
   },
   headerDoneLabel: {
     color: Palette.accent,
@@ -732,11 +872,23 @@ const styles = StyleSheet.create({
   headerPencil: {
     padding: 4,
   },
+  saveStateText: {
+    color: Palette.textDisabled,
+    fontFamily: 'DM-Sans',
+    fontSize: 12,
+  },
+  saveStateUnsaved: {
+    color: withOpacity(Palette.recordRed, 0.7),
+  },
+  providerSection: {
+    alignItems: 'center',
+    gap: 4,
+  },
   providerRow: {
     flexDirection: 'row',
     gap: 24,
     justifyContent: 'center',
-    paddingBottom: 8,
+    paddingBottom: 4,
     paddingTop: 2,
   },
   providerBtn: {
@@ -744,5 +896,11 @@ const styles = StyleSheet.create({
   },
   providerBtnPressed: {
     opacity: 0.5,
+  },
+  linkErrorText: {
+    color: withOpacity(Palette.recordRed, 0.8),
+    fontFamily: 'DM-Sans',
+    fontSize: 12,
+    textAlign: 'center',
   },
 });

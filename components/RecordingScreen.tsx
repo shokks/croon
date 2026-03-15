@@ -174,6 +174,7 @@ export function RecordingScreen({ reviewMode = false, songId }: RecordingScreenP
 
         <View style={[styles.backRow, { paddingTop: insets.top + 8 }]}>
           <Pressable
+            accessibilityLabel="Go back"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 16 }}
             onPress={() => router.back()}
             style={styles.backButton}>
@@ -194,6 +195,8 @@ export function RecordingScreen({ reviewMode = false, songId }: RecordingScreenP
             return (
               <Pressable
                 key={opt.value}
+                accessibilityLabel={`Scroll speed: ${opt.label}`}
+                accessibilityState={{ selected: active }}
                 onPress={() => void handleSpeedChange(opt.value)}
                 style={[styles.speedChip, active && styles.speedChipActive]}>
                 <Text style={[styles.speedLabel, active && styles.speedLabelActive]}>
