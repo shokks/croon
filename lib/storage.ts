@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { ExternalSongLinks, Song, SongRecording } from '@/types';
 
-const SONGS_STORAGE_KEY = 'lyricloop:songs';
+const SONGS_STORAGE_KEY = 'songbuddy:songs';
 
 function normalizeRecording(value: unknown): SongRecording | undefined {
   if (!value || typeof value !== 'object') return undefined;

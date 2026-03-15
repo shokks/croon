@@ -1,17 +1,17 @@
 {
   "expo": {
-    "name": "lyricloop",
-    "slug": "lyricloop",
+    "name": "SongBuddy",
+    "slug": "songbuddy",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "lyricloop",
+    "scheme": "songbuddy",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "LyricLoop needs microphone access to record your singing with scrolling lyrics.",
+        "NSMicrophoneUsageDescription": "SongBuddy needs microphone access to record your singing with scrolling lyrics.",
         "LSApplicationQueriesSchemes": ["spotify"]
       }
     },
