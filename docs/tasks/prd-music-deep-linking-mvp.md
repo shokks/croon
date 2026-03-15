@@ -10,15 +10,15 @@
 
 ## 1. Why Are We Building This?
 
-Users in LyricLoop are practicing songs they already know and love. After finding the lyrics and recording, the natural next step is to listen to the real track — to check their delivery, re-learn a section, or just enjoy the song. Right now there is no path from a song in LyricLoop to its playback anywhere; users have to manually open Spotify or Apple Music and search again.
+Users in SongBuddy are practicing songs they already know and love. After finding the lyrics and recording, the natural next step is to listen to the real track — to check their delivery, re-learn a section, or just enjoy the song. Right now there is no path from a song in SongBuddy to its playback anywhere; users have to manually open Spotify or Apple Music and search again.
 
-This feature removes that friction. One tap from a song in LyricLoop opens it in the user's preferred music app, instantly. It makes LyricLoop feel connected to the broader music ecosystem rather than an isolated tool.
+This feature removes that friction. One tap from a song in SongBuddy opens it in the user's preferred music app, instantly. It makes SongBuddy feel connected to the broader music ecosystem rather than an isolated tool.
 
 ---
 
 ## 2. Goals
 
-- Let users jump from any song in LyricLoop to Spotify, Apple Music, or YouTube in one tap.
+- Let users jump from any song in SongBuddy to Spotify, Apple Music, or YouTube in one tap.
 - Minimise time between intent and playback — no extra steps, no auth walls.
 - Fail gracefully for songs without provider links — never crash, never block.
 - Ship with zero OAuth or playback-control complexity.
@@ -129,7 +129,7 @@ type ExternalSongLinks = {
 ## 8. Success Metrics (Real User Feedback)
 
 - A user taps "Open in Spotify" on a song that has a Spotify link and lands in the Spotify track in under 3 seconds.
-- A user reports they no longer have to manually search in Spotify after a LyricLoop session.
+- A user reports they no longer have to manually search in Spotify after a SongBuddy session.
 - When a link is unavailable, the user sees the toast and continues using the app without confusion.
 - At least 2 out of 3 beta users who try the feature find it useful enough to use again on their next session.
 

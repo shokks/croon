@@ -1,4 +1,4 @@
-# PRD: LyricLoop MVP (Expo App)
+# PRD: SongBuddy MVP (Expo App)
 
 **Status:** Draft  
 **Created:** 2026-03-13  
@@ -10,7 +10,7 @@
 
 Amateur singers — people who sing for fun, practice originals, or do worship music — have no simple way to record themselves while reading scrolling lyrics on the same screen. The only workarounds are broken: pasting lyrics into a Snapchat chat and screen-recording (iOS kills background audio half the time), or using Smule (paywall for solo recording, no custom lyrics, social overhead).
 
-LyricLoop solves one specific problem: **paste your lyrics, hit record, get an audio clip**. The lyrics scroll automatically while the mic captures your voice. The user plays music separately (Spotify, YouTube) and the app is configured to not interrupt it. The output is a real audio file they can share directly from the app.
+SongBuddy solves one specific problem: **paste your lyrics, hit record, get an audio clip**. The lyrics scroll automatically while the mic captures your voice. The user plays music separately (Spotify, YouTube) and the app is configured to not interrupt it. The output is a real audio file they can share directly from the app.
 
 No account. No catalog. No strangers. One screen.
 
@@ -135,7 +135,7 @@ Project uses Expo Router. Route structure:
 ## 8. Success Metrics (Real User Feedback)
 
 - 3 beta users complete the full flow (paste lyrics → record → share clip) without asking for help or hitting an error
-- At least 1 user plays Spotify in the background while recording with LyricLoop — confirms background audio is NOT killed
+- At least 1 user plays Spotify in the background while recording with SongBuddy — confirms background audio is NOT killed
 - At least 2 users save a song to the library and successfully open it in a second session
 - At least 1 user explicitly says "this is easier than my current workaround"
 - Zero reports of the recording button doing nothing or the app crashing during record

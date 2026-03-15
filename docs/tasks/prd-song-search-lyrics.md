@@ -11,7 +11,7 @@
 
 Right now, users have to paste or type lyrics manually — which is the biggest friction point before they can hit Record. Most users already know the song they want to practice; they just want to get the words on screen fast.
 
-This feature lets users search for a song by name, auto-fills the title and lyrics in one tap, and — when synced lyrics are available — advances the active line in real time during recording so the user always knows where they are. It transforms LyricLoop from "paste your own lyrics app" into "find any song and practice in 30 seconds."
+This feature lets users search for a song by name, auto-fills the title and lyrics in one tap, and — when synced lyrics are available — advances the active line in real time during recording so the user always knows where they are. It transforms SongBuddy from "paste your own lyrics app" into "find any song and practice in 30 seconds."
 
 Album artwork from iTunes is also stored on the song and displayed in the library, making the song list visually scannable without feeling like a social feed.
 

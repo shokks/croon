@@ -1,7 +1,7 @@
 # Apple Search + LRCLIB Lyrics Integration Spec
 
 ## Goal
-Implement a 2-step song creation flow in **LyricLoop**:
+Implement a 2-step song creation flow in **SongBuddy**:
 1. Search/select song using iTunes Search API.
 2. Auto-fetch lyrics from LRCLIB when possible.
 3. Use LRCLIB synced timestamps (when available) for sing-along visualization.
@@ -201,7 +201,7 @@ export function parseSyncedLyrics(lrc: string | null): SyncedLyricLine[]
 ## Sync Notes / Constraints
 
 - Timestamp sync is most reliable against app-controlled elapsed time.
-- For the current LyricLoop flow (recording user voice while external music may be playing), sync can drift from external audio.
+- For the current SongBuddy flow (recording user voice while external music may be playing), sync can drift from external audio.
 - MVP approach: synced lyrics are a visual guide, not guaranteed beat-perfect alignment.
 
 ---

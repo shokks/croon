@@ -1,4 +1,4 @@
-# LyricLoop
+# SongBuddy
 
 **Status:** Idea
 **Created:** 2026-03-13
@@ -13,9 +13,9 @@ The pain is sharp and specific: I know what I want to sing, I have the words, I 
 
 ## Solution
 
-LyricLoop is a mobile-first app with one job: paste your lyrics, hit record, get a clip. You open the app, drop in your lyrics (paste, type, or import from a file), and press record. The lyrics scroll automatically at a pace you can adjust. Your voice is captured. When you're done, you have an audio clip — optionally with a video of the scrolling lyrics overlaid — that you can save locally or share directly to WhatsApp, iMessage, TikTok, or wherever.
+SongBuddy is a mobile-first app with one job: paste your lyrics, hit record, get a clip. You open the app, drop in your lyrics (paste, type, or import from a file), and press record. The lyrics scroll automatically at a pace you can adjust. Your voice is captured. When you're done, you have an audio clip — optionally with a video of the scrolling lyrics overlaid — that you can save locally or share directly to WhatsApp, iMessage, TikTok, or wherever.
 
-That's the whole core experience. No account required to start. No catalog to browse. No duet invitations. No pitch score, no community feed, no strangers. The scroll speed is configurable so you can set it once for a song and it just works on repeat takes. If you want to layer music underneath, you play it on your phone before hitting record — LyricLoop captures the mix. The output is a real file: audio only, or video with the lyrics on screen, ready to send.
+That's the whole core experience. No account required to start. No catalog to browse. No duet invitations. No pitch score, no community feed, no strangers. The scroll speed is configurable so you can set it once for a song and it just works on repeat takes. If you want to layer music underneath, you play it on your phone before hitting record — SongBuddy captures the mix. The output is a real file: audio only, or video with the lyrics on screen, ready to send.
 
 The longer-term version of the product is a personal lyric library — songs you've timed and saved, retrievable instantly. And optionally, a public layer where users share timed lyric sets for popular songs, building a community karaoke library through contribution rather than licensing. That's a 12-month evolution. The day-one product is just: paste, scroll, record, share.
 
@@ -23,17 +23,17 @@ The longer-term version of the product is a personal lyric library — songs you
 
 - **The workaround confirms real demand.** People are already doing a broken version of this with Snapchat and screen recording. They're not asking for a new kind of app — they're asking for the thing they're already trying to do to actually work.
 - **The incumbents are not competitors for this use case.** Smule and StarMaker are stranger-social platforms built around licensed catalogs. Their entire architecture assumes you want their songs. Custom lyrics are structurally absent, not just a missing feature. They can't add it in a sprint without rewriting their content model.
-- **No chicken-and-egg problem.** LyricLoop is useful with exactly one user on day one. There's no social graph to bootstrap, no catalog to license, no content to seed. Build it and it works immediately.
+- **No chicken-and-egg problem.** SongBuddy is useful with exactly one user on day one. There's no social graph to bootstrap, no catalog to license, no content to seed. Build it and it works immediately.
 - **The target communities are concentrated and reachable.** r/singing, r/Songwriting, worship/church music Facebook groups, singer-songwriter Discord servers. These are specific, passionate, underserved. Getting the first 50 beta users is a few well-placed posts, not a marketing campaign.
-- **TikTok can be the output surface, not the competition.** Ship a "Post to TikTok" button on day one. LyricLoop becomes the recording studio; TikTok is the stage. Every clip posted from LyricLoop is organic distribution.
+- **TikTok can be the output surface, not the competition.** Ship a "Post to TikTok" button on day one. SongBuddy becomes the recording studio; TikTok is the stage. Every clip posted from SongBuddy is organic distribution.
 
 ## Why This Could Fail
 
-- **A big platform could ship this as a feature.** TikTok adding a "karaoke creator" mode for Reels, or Instagram adding a lyrics-teleprompter to Stories, would eat the core use case overnight. These platforms have distribution LyricLoop will never match. The window may be 12-18 months before someone notices.
-- **The emotional product is missing.** Research shows users don't actually want raw recording — they want to feel like a real singer. Every successful app in this space sells transformation: effects, pitch correction, reverb that makes you sound good. LyricLoop's bet is that sharing with close friends (not strangers) removes the need for that transformation layer. That bet is plausible but unproven.
-- **Discovery is the real problem, not the product.** "Better than a broken Snapchat hack" only converts people who (a) have experienced that hack breaking and (b) are actively searching for an alternative. Organic discovery against "karaoke" in the App Store is a fight LyricLoop will lose. Growth requires seeding specific communities aggressively.
+- **A big platform could ship this as a feature.** TikTok adding a "karaoke creator" mode for Reels, or Instagram adding a lyrics-teleprompter to Stories, would eat the core use case overnight. These platforms have distribution SongBuddy will never match. The window may be 12-18 months before someone notices.
+- **The emotional product is missing.** Research shows users don't actually want raw recording — they want to feel like a real singer. Every successful app in this space sells transformation: effects, pitch correction, reverb that makes you sound good. SongBuddy's bet is that sharing with close friends (not strangers) removes the need for that transformation layer. That bet is plausible but unproven.
+- **Discovery is the real problem, not the product.** "Better than a broken Snapchat hack" only converts people who (a) have experienced that hack breaking and (b) are actively searching for an alternative. Organic discovery against "karaoke" in the App Store is a fight SongBuddy will lose. Growth requires seeding specific communities aggressively.
 - **The technical moat is thin.** Any developer can build this in a weekend. The behavioral moat (personal lyric libraries, accumulated song timing data) takes months to form and doesn't create network effects. It prevents churn but doesn't block a better-funded competitor from showing up.
-- **iOS audio sessions are a real technical risk.** The exact failure users experience with the Snapchat hack — iOS killing background audio when recording starts — is a platform-level constraint LyricLoop has to solve. It's solvable (LyricLoop controls the audio session), but it requires careful implementation and testing, and Apple can change behavior in any OS update.
+- **iOS audio sessions are a real technical risk.** The exact failure users experience with the Snapchat hack — iOS killing background audio when recording starts — is a platform-level constraint SongBuddy has to solve. It's solvable (SongBuddy controls the audio session), but it requires careful implementation and testing, and Apple can change behavior in any OS update.
 
 ## MVP Scope
 
@@ -50,6 +50,6 @@ The longer-term version of the product is a personal lyric library — songs you
 
 - [ ] Build a prototype PWA: lyrics input → auto-scroll → MediaRecorder → download. One screen, no auth, no backend. Ship to 3 people to watch them use it.
 - [ ] Post in r/singing and r/Songwriting: "I built a simple tool to record yourself singing with scrolling lyrics — does this solve a real problem for you?" Get 10 people to try it and talk to 3 of them.
-- [ ] Validate the iOS audio session: confirm LyricLoop can record mic audio while background music plays without killing it. This is the core technical risk and should be confirmed before any further building.
+- [ ] Validate the iOS audio session: confirm SongBuddy can record mic audio while background music plays without killing it. This is the core technical risk and should be confirmed before any further building.
 - [ ] Decide on the emotional product question: ship raw recording first and see if sharing-with-friends makes effects unnecessary, or add basic reverb/EQ on day one to remove that barrier entirely.
-- [ ] Check domain and App Store name availability for "LyricLoop" before committing to the name publicly.
+- [ ] Check domain and App Store name availability for "SongBuddy" before committing to the name publicly.

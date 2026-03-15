@@ -1,6 +1,6 @@
-# Tasks: LyricLoop MVP
+# Tasks: SongBuddy MVP
 
-**PRD:** [docs/tasks/prd-lyricloop-mvp.md](./tasks/prd-lyricloop-mvp.md)  
+**PRD:** [docs/tasks/prd-songbuddy-mvp.md](./tasks/prd-songbuddy-mvp.md)  
 **Created:** 2026-03-13
 
 ---
@@ -102,7 +102,7 @@ Each parent task follows this lifecycle:
   - [x] 5.4 Request mic permission (`Audio.requestPermissionsAsync()`) on first tap of record; show a simple error message if denied (~20 min)
   - [x] 5.5 Create `components/RecordButton.tsx` — large circular button; idle = red mic icon, recording = pulsing red stop icon; calls `startRecording` / `stopRecording` on press (~30 min)
   - [x] 5.6 Wire `RecordButton` to `useAutoScroll`: `startRecording` → `startScroll`, `stopRecording` → stop scroll and transition to post-recording view (~20 min)
-  - [x] 5.7 Verify **on a real device**: start Spotify, open LyricLoop, tap record — confirm Spotify keeps playing; tap stop — confirm a recording URI is returned (~20 min)
+  - [x] 5.7 Verify **on a real device**: start Spotify, open SongBuddy, tap record — confirm Spotify keeps playing; tap stop — confirm a recording URI is returned (~20 min)
   - [x] 5.8 Get user approval
   - [x] 5.9 Commit changes, merge `feature/5-recording` to `main`, delete branch (~10 min)
 

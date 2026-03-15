@@ -1,8 +1,8 @@
-# LyricLoop — Screen UX/UI Spec
+# SongBuddy — Screen UX/UI Spec
 
 **Version:** 3.1  
 **Replaces:** v2.0 (combined editor+recording screen)  
-**Grounded in:** `docs/lyricloop.md`, `docs/lyricloop-research.md`, `docs/design-principles.md`
+**Grounded in:** `docs/songbuddy.md`, `docs/songbuddy-research.md`, `docs/design-principles.md`
 
 ---
 
@@ -25,7 +25,7 @@ From the research:
 
 > "Customers are not buying recording. They are buying the feeling of being a real singer."
 
-LyricLoop's specific bet (different from Smule's):
+SongBuddy's specific bet (different from Smule's):
 > Sharing with people who already accept you removes the need for transformation effects. You don't need reverb to feel safe when your audience is a group chat of three.
 
 **Implication for UX:**
@@ -48,7 +48,7 @@ The Snapchat hack flow the ICP is already doing:
 
 **The mental model is linear and simple.** The user has a single goal. They are not in an exploratory state.
 
-LyricLoop's replacement flow:
+SongBuddy's replacement flow:
 1. Open app → see their songs (or empty state if new)
 2. Tap song (or tap + to create one)
 3. Paste / type lyrics → tap "Record →"
@@ -142,7 +142,7 @@ Specifically:
 
 **Layout**
 - Full `#0E0C0A` background — no surface chrome at the list level.
-- Header: "LyricLoop" title. No navigation buttons in the header.
+- Header: "SongBuddy" title. No navigation buttons in the header.
 - Song list with 20dp horizontal padding.
 - **Floating `+` button** — bottom-right, 56dp circle, `#D4A853` amber. Fixed position, safe-area aware. This is the only primary action on this screen.
 
@@ -268,7 +268,7 @@ This is a single navigated screen with two in-place visual states. No navigation
 **UX Behavior**
 - No confetti, no score, no "Great take!" message.
 - Waveform is static until Play is tapped. During playback, a thin vertical playhead line sweeps across the waveform from left to right.
-- Share opens the native OS share sheet. The first-surface options will be whatever the user's OS surfaces (WhatsApp, iMessage, AirDrop — the close-friends channels). LyricLoop does not reorder this.
+- Share opens the native OS share sheet. The first-surface options will be whatever the user's OS surfaces (WhatsApp, iMessage, AirDrop — the close-friends channels). SongBuddy does not reorder this.
 - Done exits to Library immediately, without confirmation, and stops any active playback.
 
 ---
