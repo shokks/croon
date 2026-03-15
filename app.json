@@ -61,7 +61,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "b2b228f8-1559-471e-905a-8386e40ebc2a"
+        "projectId": "b6931f89-0fb6-484b-9526-fe53fa19c729"
       }
     },
     "owner": "5aikat",
@@ -69,7 +69,7 @@
       "policy": "appVersion"
     },
     "updates": {
-      "url": "https://u.expo.dev/b2b228f8-1559-471e-905a-8386e40ebc2a"
+      "url": "https://u.expo.dev/b6931f89-0fb6-484b-9526-fe53fa19c729"
     }
   }
 }
