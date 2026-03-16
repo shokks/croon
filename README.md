@@ -15,9 +15,11 @@ The app was born from a simple observation: people were hacking together a broke
 - **One-tap recording** — Record audio with your device mic; lyrics stay visible while you sing
 - **Instant playback** — Review your take immediately with a waveform visualization
 - **Easy sharing** — Export and share to WhatsApp, iMessage, TikTok, or anywhere
-- **Personal song library** — Save songs with timing settings for quick re-access
+- **Personal song library** — Save songs with timing settings for quick re-access (with hero card, filter chips, artwork)
 - **Music deep linking** — Jump to the original song on Spotify, Apple Music, or YouTube
 - **Fully local** — No account required. Your recordings stay on your device
+
+**Coming soon:** Share Link — Generate public shareable URLs with a mini web player and synced lyrics display.
 
 ## Design Philosophy
 
