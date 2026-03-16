@@ -1,7 +1,7 @@
 # Spec: Music Deep Linking from User Songs (MVP)
 
 ## Goal
-Allow users to open a song from SongBuddy directly in Spotify, Apple Music, or YouTube using deep links, without in-app playback control or OAuth login.
+Allow users to open a song from Croon directly in Spotify, Apple Music, or YouTube using deep links, without in-app playback control or OAuth login.
 
 ## Scope (MVP)
 - Add deep-link actions on song surfaces (song details and song list item actions).
@@ -15,11 +15,11 @@ Allow users to open a song from SongBuddy directly in Spotify, Apple Music, or Y
 ## Out of Scope (explicit)
 - In-app playback control (play/pause/seek/state sync).
 - Spotify/Apple OAuth or token management.
-- Background playback managed by SongBuddy.
+- Background playback managed by Croon.
 - Hard real-time lyrics sync with external player state.
 
 ## User Experience
-1. User opens a song in SongBuddy.
+1. User opens a song in Croon.
 2. User taps “Open in…” and selects Spotify, Apple Music, or YouTube.
 3. App attempts to open native app deep link.
 4. If unavailable, app opens web URL.

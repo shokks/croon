@@ -29,7 +29,7 @@
   --radius-xl: calc(var(--radius) * 1.4);
 }
 
-/* SongBuddy — always dark, single theme */
+/* Croon — always dark, single theme */
 :root {
   --background: #0C0C0E;
   --foreground: #F2F2F0;
@@ -51,7 +51,7 @@
   --ring: #9B8EC4;
   --radius: 0.75rem;
 
-  /* SongBuddy custom tokens */
+  /* Croon custom tokens */
   --sb-surface-raised: #222224;
   --sb-text-secondary: #8A8A90;
   --sb-text-disabled: #484850;
@@ -72,6 +72,50 @@
 .animate-fade-up {
   animation: fade-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   opacity: 0;
+}
+
+/*
+ * Matches the app's synced-lyrics scroll behaviour:
+ * hold on each line for ~2.4s, then ease-in-out snap to the next over ~0.6s.
+ * 8 lines × 12.5% each = 100%. Hold occupies first 10%, transition last 2.5%.
+ * ease-in-out is applied per-segment between consecutive keyframe stops.
+ */
+@keyframes scroll-lyrics {
+  0%,    10%    { transform: translateY(0px); }
+  12.5%, 22.5%  { transform: translateY(-48px); }
+  25%,   35%    { transform: translateY(-96px); }
+  37.5%, 47.5%  { transform: translateY(-144px); }
+  50%,   60%    { transform: translateY(-192px); }
+  62.5%, 72.5%  { transform: translateY(-240px); }
+  75%,   85%    { transform: translateY(-288px); }
+  87.5%, 97.5%  { transform: translateY(-336px); }
+  100%           { transform: translateY(-384px); }
+}
+
+.lyrics-scroll {
+  animation: scroll-lyrics 24s ease-in-out infinite;
+  will-change: transform;
+}
+
+/*
+ * Replicates the app's 3-zone opacity from LyricsScrollView:
+ *   past lines   → textPrimary @ 0.22
+ *   active line  → textPrimary @ 1.0  (centered)
+ *   future lines → textPrimary @ 0.55
+ * Applied to a fixed container so scrolling text passes through the zones.
+ */
+.lyrics-mask {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent                 0%,
+    rgba(0, 0, 0, 0.22)        14%,
+    rgba(0, 0, 0, 0.22)        32%,
+    rgba(0, 0, 0, 1)           40%,
+    rgba(0, 0, 0, 1)           60%,
+    rgba(0, 0, 0, 0.55)        68%,
+    rgba(0, 0, 0, 0.55)        88%,
+    transparent                100%
+  );
 }
 
 @layer base {

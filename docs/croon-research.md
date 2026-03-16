@@ -1,4 +1,4 @@
-# SongBuddy — Research Notes
+# Croon — Research Notes
 
 **Captured:** 2026-03-13
 **Sources:** Smule landing page, Singa landing page, Karaoke Sync landing page, StarMaker reviews, Smule Trustpilot (111 reviews, 1.6/5), 11 Reddit threads (r/NoStupidQuestions, r/SmuleSing, r/singing, r/Songwriting, r/mac, r/karaoke)
@@ -7,7 +7,7 @@
 
 ## Problem Validation
 
-- **Clear workaround evidence**: Reddit r/NoStupidQuestions post titled "How do I record myself singing on my phone via screen recording, while also reading the lyrics on the screen?" describes users pasting lyrics into Snapchat chat and screen-recording to sing along. This is exactly the pain SongBuddy solves.
+- **Clear workaround evidence**: Reddit r/NoStupidQuestions post titled "How do I record myself singing on my phone via screen recording, while also reading the lyrics on the screen?" describes users pasting lyrics into Snapchat chat and screen-recording to sing along. This is exactly the pain Croon solves.
 - **Smule/StarMaker complaints** (100M+ and 500M+ downloads respectively) center on: audio distortion, mic permission bugs, Bluetooth latency, too many social/AI features obscuring the core singing flow. People want simple, not a social network.
 - **r/singing** and **r/Songwriting** communities regularly ask for simpler ways to record themselves with lyrics visible - not tied to a song catalog.
 - The market for "record yourself singing your own words" is underserved vs. the massive karaoke-catalog market.
@@ -73,7 +73,7 @@ The evidence:
 - Singa offers "guide vocals" — training wheels so you don't hear your own failure.
 - Karaoke Sync lets you boost your voice volume 7x. Not for quality — to drown out your own doubt.
 
-**The implication for SongBuddy:** Raw recording skips the emotional product. SongBuddy's bet is that sharing *with friends who already accept you* changes the equation — you don't need effects to feel safe with 3 people who already love you. That bet is unproven but potentially correct for the "share with close circle" use case vs. "broadcast to strangers."
+**The implication for Croon:** Raw recording skips the emotional product. Croon's bet is that sharing *with friends who already accept you* changes the equation — you don't need effects to feel safe with 3 people who already love you. That bet is unproven but potentially correct for the "share with close circle" use case vs. "broadcast to strangers."
 
 ---
 
@@ -126,23 +126,23 @@ Smule locks solo recording behind VIP. KaraokeSync sells unlimited exports. Star
 
 *Answer from evidence:* Smule's free tier locks solo recording behind a paywall after 7 days. Free users can only join duets someone else opened with a VIP track — they cannot sing alone for free. Custom lyrics are completely unsupported; only the 15M licensed catalog works. Android audio is systematically degraded (users bought iPhones specifically to use Smule). The product is in active decline per Trustpilot: *"Terrible updates that actively make things worse… insane payment schemes… bugs persisting for almost a decade."*
 
-*Where it still breaks:* Any well-funded startup could add custom lyrics in 6 weeks. This answer is about Smule specifically, not the category. One new competitor shipping this feature destroys SongBuddy's core differentiator.
+*Where it still breaks:* Any well-funded startup could add custom lyrics in 6 weeks. This answer is about Smule specifically, not the category. One new competitor shipping this feature destroys Croon's core differentiator.
 
 ---
 
 **Q2: "The real competition is TikTok + phone camera. Why build a dedicated app?"**
 
-*Answer from evidence:* TikTok's lyric scroll is for pre-recorded audio synced to video — it doesn't support live singing capture. The specific iOS system failure: when you start screen-recording on iPhone, background audio (Spotify, YouTube) pauses. Thread 1 documents this verbatim. Thread 8 describes trying to record video + karaoke BG audio on the same iPhone into a single clip — still unsolved in hardware or software. SongBuddy fills a system-level gap in iOS/Android audio session management.
+*Answer from evidence:* TikTok's lyric scroll is for pre-recorded audio synced to video — it doesn't support live singing capture. The specific iOS system failure: when you start screen-recording on iPhone, background audio (Spotify, YouTube) pauses. Thread 1 documents this verbatim. Thread 8 describes trying to record video + karaoke BG audio on the same iPhone into a single clip — still unsolved in hardware or software. Croon fills a system-level gap in iOS/Android audio session management.
 
-*Where it still breaks:* TikTok could ship a "karaoke creator" mode tomorrow. Instagram has Collab audio modes already. These platforms have distribution SongBuddy will never match organically.
+*Where it still breaks:* TikTok could ship a "karaoke creator" mode tomorrow. Instagram has Collab audio modes already. These platforms have distribution Croon will never match organically.
 
 ---
 
 **Q3: "How do you grow? There's no social graph — you have no viral loop."**
 
-*Answer from evidence:* SongBuddy has no chicken-and-egg problem — it's useful with 1 user on day 1. First 500 users come from high-signal communities: r/singing (actively seeking tools), r/Songwriting (89-comment thread about voice insecurity = latent demand), worship/church music groups (structured, passionate, completely underserved by Smule's social model). The "share with friends" output is the viral loop — every shared clip is an ad with attribution.
+*Answer from evidence:* Croon has no chicken-and-egg problem — it's useful with 1 user on day 1. First 500 users come from high-signal communities: r/singing (actively seeking tools), r/Songwriting (89-comment thread about voice insecurity = latent demand), worship/church music groups (structured, passionate, completely underserved by Smule's social model). The "share with friends" output is the viral loop — every shared clip is an ad with attribution.
 
-*Where it still breaks:* "Share with friends" only creates a loop if the output is visually distinct and has soft attribution (a watermark or "Made with SongBuddy"). WhatsApp audio shares have no visual surface at all. CAC could be high with no other loop.
+*Where it still breaks:* "Share with friends" only creates a loop if the output is visually distinct and has soft attribution (a watermark or "Made with Croon"). WhatsApp audio shares have no visual surface at all. CAC could be high with no other loop.
 
 ---
 
@@ -158,26 +158,26 @@ Smule locks solo recording behind VIP. KaraokeSync sells unlimited exports. Star
 
 *Answer from evidence:* The Snapchat hack fails consistently. Thread 1 documents the exact failure mode: iOS audio session conflicts cause background music to pause when screen recording begins. The user cannot reliably get a usable take. An app that reliably solves: [tap record] → [lyrics scroll] → [clip exported] is 10x the Snapchat hack, not 2x. The bar for downloading an app is "does this reliably solve my problem?" — the hack doesn't.
 
-*Where it still breaks:* "Better than a broken hack" only converts users who have already experienced the broken hack and are actively looking for a solution. Discovery is the real problem — not conversion. If no one knows SongBuddy exists, the broken workaround doesn't drive them to it.
+*Where it still breaks:* "Better than a broken hack" only converts users who have already experienced the broken hack and are actively looking for a solution. Discovery is the real problem — not conversion. If no one knows Croon exists, the broken workaround doesn't drive them to it.
 
 ---
 
 ## Attacking the Two Weakest Answers
 
 **Q2 (TikTok threat) — strongest counter-move:**
-Don't compete with TikTok for distribution. Make TikTok the output surface. Ship a "Post to TikTok" button on day one. SongBuddy becomes the recording studio; TikTok is the stage. Users who are already creators use SongBuddy as their pre-production tool. This also creates an organic presence on TikTok that a platform feature can't easily kill — because SongBuddy recordings are identifiable and creators will hashtag them.
+Don't compete with TikTok for distribution. Make TikTok the output surface. Ship a "Post to TikTok" button on day one. Croon becomes the recording studio; TikTok is the stage. Users who are already creators use Croon as their pre-production tool. This also creates an organic presence on TikTok that a platform feature can't easily kill — because Croon recordings are identifiable and creators will hashtag them.
 
 **Q4 (moat) — strongest version:**
-The community-lyric-set angle is real but requires a product bet. If SongBuddy allows users to publish their custom timed lyrics for a song (e.g. "I timed the lyrics for Hozier's Cherry Wine in my key — here it is"), SongBuddy builds a user-generated karaoke library that no licensed catalog can replicate. This is how Genius built a defensible asset in lyrics: user contributions, not licensing. It's a 12-month product evolution, not a day-one feature — but it's the path to a real moat.
+The community-lyric-set angle is real but requires a product bet. If Croon allows users to publish their custom timed lyrics for a song (e.g. "I timed the lyrics for Hozier's Cherry Wine in my key — here it is"), Croon builds a user-generated karaoke library that no licensed catalog can replicate. This is how Genius built a defensible asset in lyrics: user contributions, not licensing. It's a 12-month product evolution, not a day-one feature — but it's the path to a real moat.
 
 ---
 
 ## Reddit Thread Index
 
-Full thread data saved at: `~/Obsidian/Work/SongBuddy-Reddit-Research.md`
+Full thread data saved at: `~/Obsidian/Work/Croon-Reddit-Research.md`
 
 Key threads:
-1. r/NoStupidQuestions — Snapchat hack to record singing with lyrics on screen (exact SongBuddy use case)
+1. r/NoStupidQuestions — Snapchat hack to record singing with lyrics on screen (exact Croon use case)
 2. r/SmuleSing — "Wrong app for what I'm trying to do?" (Bluetooth broken, gave up on Smule)
 3. r/SmuleSing — "Bad Recording Quality Only on Smule" (Android audio systematically degraded)
 4. r/singing — "Does Smule distort your recording?" (Rode mic user, still sounds terrible)

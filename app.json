@@ -1,18 +1,18 @@
 {
   "expo": {
-    "name": "SongBuddy",
+    "name": "Croon",
     "slug": "songbuddy",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "songbuddy",
+    "scheme": "croon",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.eightyeightmph.songbuddy",
+      "bundleIdentifier": "com.eightyeightmph.croon",
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "SongBuddy needs microphone access to record your singing with scrolling lyrics.",
+        "NSMicrophoneUsageDescription": "Croon needs microphone access to record your singing with scrolling lyrics.",
         "LSApplicationQueriesSchemes": [
           "spotify"
         ],
@@ -20,7 +20,7 @@
       }
     },
     "android": {
-      "package": "com.eightyeightmph.songbuddy",
+      "package": "com.eightyeightmph.croon",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -30,9 +30,6 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
-        "RECORD_AUDIO",
-        "android.permission.RECORD_AUDIO",
-        "android.permission.MODIFY_AUDIO_SETTINGS",
         "RECORD_AUDIO",
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"

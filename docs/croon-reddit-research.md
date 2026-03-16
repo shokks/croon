@@ -1,4 +1,4 @@
-# Reddit Research: SongBuddy Pain Point Analysis
+# Reddit Research: Croon Pain Point Analysis
 **Query:** Singing app pain points — recording with scrolling lyrics  
 **Date:** 2026-03-13  
 **Threads fetched:** 12 total
@@ -9,7 +9,7 @@
 
 ### Top Unmet Needs (Ranked by Signal Strength)
 
-1. **"I want to record myself singing while reading scrolling lyrics on the same screen"** — The core SongBuddy use case exists verbatim on Reddit. People are hacking it with Snapchat (paste lyrics into chat, screen record), but it breaks constantly (music pauses, audio doesn't mix).
+1. **"I want to record myself singing while reading scrolling lyrics on the same screen"** — The core Croon use case exists verbatim on Reddit. People are hacking it with Snapchat (paste lyrics into chat, screen record), but it breaks constantly (music pauses, audio doesn't mix).
 
 2. **"I just want a simple tool — I don't want a social app"** — Smule, Starmaker, etc. are community/collab platforms. People who want private practice or personal recordings feel the apps aren't designed for them.
 
@@ -39,7 +39,7 @@
 - "Forgot to mention I have an iPhone 13 Pro" (score: 1)
 
 **Pain Points:**
-- ✅ Exact SongBuddy use case: sing + read lyrics + record on one phone
+- ✅ Exact Croon use case: sing + read lyrics + record on one phone
 - Music pausing when screen recording = broken workaround
 - No dedicated app for this — using Snapchat as a hack
 - iPhone user with no solution
@@ -147,7 +147,7 @@
 **Comments:** No helpful replies — user was about to build it themselves.
 
 **Pain Points:**
-- ✅ DIRECT SongBuddy gap: No app for custom time-synced lyrics
+- ✅ DIRECT Croon gap: No app for custom time-synced lyrics
 - Apple Music supports lyrics but NOT for user-imported files
 - User was ready to build their own solution = strong unmet need signal
 - "Custom lyrics" use case is completely unserved
@@ -186,7 +186,7 @@
 **Comments:** Moderator automod only (real answers were removed for being new accounts).
 
 **Pain Points:**
-- ✅ Core SongBuddy use case again: record video + karaoke BG audio on same device
+- ✅ Core Croon use case again: record video + karaoke BG audio on same device
 - Single clip for social sharing is the output goal
 - iPhone + external mic + YouTube audio = can't mix on one device
 - No software solution exists; person was asking about hardware
@@ -256,7 +256,7 @@
 
 | Pain Point | Threads | Severity |
 |---|---|---|
-| No simple app to read scrolling lyrics + record yourself | T1, T6, T8 | 🔴 Critical — exact SongBuddy gap |
+| No simple app to read scrolling lyrics + record yourself | T1, T6, T8 | 🔴 Critical — exact Croon gap |
 | Audio quality degraded by app (Smule compression) | T3, T4 | 🔴 Critical — core product failure |
 | Video + background audio can't be captured on one device | T1, T2, T8 | 🔴 Critical |
 | Custom/own lyrics not supported (only curated song libraries) | T6 | 🟠 High — songwriter use case |
@@ -269,7 +269,7 @@
 
 ---
 
-## SongBuddy Opportunity Summary
+## Croon Opportunity Summary
 
 The research confirms a clear, unserved need: **a simple mobile app where you paste your own lyrics, they scroll automatically while music plays, and the whole thing records as a single shareable clip.** 
 

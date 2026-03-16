@@ -1,7 +1,7 @@
 Yes — we can proceed.
 
 ## Execution approach
-I’ll implement **exactly as `docs/tasks/tasks-songbuddy-mvp.md` defines**, parent task by parent task:
+I’ll implement **exactly as `docs/tasks/tasks-croon-mvp.md` defines**, parent task by parent task:
 1. Create task branch
 2. Implement sub-tasks
 3. Run relevant validation
@@ -16,6 +16,6 @@ I’ll begin with **Task 1.0 (project setup)**:
 - update mic permissions in `app.json`
 - create `types/index.ts`
 - validate with lint/typecheck + Expo startup check
-- mark completed checkboxes in `docs/tasks/tasks-songbuddy-mvp.md`
+- mark completed checkboxes in `docs/tasks/tasks-croon-mvp.md`
 
 Once Task 1.0 is done, I’ll stop and ask for your approval before Task 2.0.

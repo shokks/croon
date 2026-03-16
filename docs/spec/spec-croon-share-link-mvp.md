@@ -1,4 +1,4 @@
-# Spec: SongBuddy Share Link (MVP)
+# Spec: Croon Share Link (MVP)
 
 ## Goal
 Let users share a recording as a **polished public link** — no video rendering, no FFmpeg, no file downloads for the recipient.
@@ -11,11 +11,11 @@ Recipient taps the link and gets a beautiful mini web player with the song title
 - **Link over file:** a URL is more frictionless than a video file for close sharing.
 - **Zero-edit by default:** no controls beyond picking a theme.
 - **Never block sharing:** if link generation fails, raw audio share remains available.
-- **Organic growth:** every shared link carries "Made with SongBuddy" branding and a link back to the app.
+- **Organic growth:** every shared link carries "Made with Croon" branding and a link back to the app.
 
 ## Hard MVP Decisions (locked)
 - No FFmpeg, no video rendering.
-- Share output: **a public URL** (`songbuddy.app/s/{shareId}`).
+- Share output: **a public URL** (`croon.app/s/{shareId}`).
 - Storage: **Convex File Storage** for audio, **Convex database** for metadata.
 - Share page: **Next.js** hosted alongside the landing page.
 - Themes: `clean | warm | night` (affects share page color palette only).
@@ -24,7 +24,7 @@ Recipient taps the link and gets a beautiful mini web player with the song title
 
 ## Repo Structure
 ```
-songbuddy/                  ← repo root
+croon/                  ← repo root
   app/                      ← Expo Router screens (existing)
   components/               ← Expo components (existing)
   convex/                   ← shared Convex backend (new)
@@ -45,11 +45,11 @@ songbuddy/                  ← repo root
 | What | How | URL |
 |---|---|---|
 | Expo app | EAS Build → App Store / Play Store | Native binary, no URL |
-| Next.js site | Vercel — Root Directory set to `web/` | `songbuddy.app` |
+| Next.js site | Vercel — Root Directory set to `web/` | `croon.app` |
 | Convex backend | `npx convex deploy` from repo root | Auto-managed by Convex Cloud |
 
-- Vercel serves `web/` at the root domain — `/s/[shareId]` resolves as `songbuddy.app/s/abc123`.
-- The Expo app references the share base URL via `EXPO_PUBLIC_SHARE_BASE_URL=https://songbuddy.app`.
+- Vercel serves `web/` at the root domain — `/s/[shareId]` resolves as `croon.app/s/abc123`.
+- The Expo app references the share base URL via `EXPO_PUBLIC_SHARE_BASE_URL=https://croon.app`.
 - Both the Expo app and Next.js site connect to Convex using their own `.env` with `CONVEX_URL`.
 
 ## Architecture
@@ -61,7 +61,7 @@ Expo app (root)
     → return shareId
   → constructs: $EXPO_PUBLIC_SHARE_BASE_URL/s/{shareId}
 
-Share URL: songbuddy.app/s/{shareId}
+Share URL: croon.app/s/{shareId}
 
 Next.js (web/) page /s/[shareId]
   → fetch public Convex query: getShare(shareId)
@@ -120,10 +120,10 @@ shares: defineTable({
 
 ### Server-side (SSR)
 - Fetch share doc from Convex on the server.
-- If not found or expired: render a clean 404/expired page with a CTA to download SongBuddy.
+- If not found or expired: render a clean 404/expired page with a CTA to download Croon.
 - Inject full OG/meta tags for rich link previews:
   - `og:title` — `"{title} by {artist}" or "{title}"`
-  - `og:description` — `"Listen on SongBuddy"`
+  - `og:description` — `"Listen on Croon"`
   - `og:image` — album art URL if available, else themed gradient OG image
   - `og:audio` — Convex CDN audio URL (where supported)
   - `twitter:card` — `player` card where supported
@@ -138,7 +138,7 @@ Visual layout (mobile-first, full-viewport):
    - Next line: smaller, reduced opacity.
    - If no `lyricsTimed`: auto-chunk `lyricsPlain` proportionally by duration.
 4. **Player controls** — centered: play/pause button + progress bar + timestamp.
-5. **Footer** — "Made with SongBuddy" → links to landing page / app store.
+5. **Footer** — "Made with Croon" → links to landing page / app store.
 
 ### Lyric Sync on Web
 - Drive active line from `audio.currentTime` via `timeupdate` event listener.
@@ -191,7 +191,7 @@ Visual layout (mobile-first, full-viewport):
 3. Implement `createShare` mutation (file upload + doc insert + expiry).
 4. Implement `getShare` public query (with expiry check).
 5. Install Convex client in both Expo root and `web/` — each with their own `.env` pointing to the same Convex deployment.
-6. Set `EXPO_PUBLIC_SHARE_BASE_URL=https://songbuddy.app` in Expo `.env`.
+6. Set `EXPO_PUBLIC_SHARE_BASE_URL=https://croon.app` in Expo `.env`.
 7. Build app-side share flow: preflight → upload → mutation → share sheet with URL.
 8. Add export state machine + entry points (post-recording + song detail).
 9. Build `web/app/s/[shareId]/page.tsx`: SSR + OG tags + mini player component.

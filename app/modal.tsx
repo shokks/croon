@@ -6,7 +6,7 @@ import { Palette } from '@/constants/theme';
 export default function ModalScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>SongBuddy</Text>
+      <Text style={styles.title}>Croon</Text>
       <Link href="/" dismissTo style={styles.link}>
         <Text style={styles.linkText}>Go to home screen</Text>
       </Link>

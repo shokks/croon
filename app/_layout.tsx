@@ -58,14 +58,14 @@ function LogoHeader() {
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
       <LogoIcon width={28} height={28} color={Palette.accent} />
       <Text style={{ fontFamily: 'DM-Sans-SemiBold', fontSize: 18, color: Palette.textPrimary }}>
-        SongBuddy
+        Croon
       </Text>
     </View>
   );
 }
 
 
-const SongBuddyTheme = {
+const CroonTheme = {
   ...DarkTheme,
   colors: {
     ...DarkTheme.colors,
@@ -102,7 +102,7 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={SongBuddyTheme}>
+    <ThemeProvider value={CroonTheme}>
       <Stack
         screenOptions={({ navigation }) => ({
           headerStyle: { backgroundColor: Palette.surface },

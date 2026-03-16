@@ -1,4 +1,4 @@
-# SongBuddy — Design Principles
+# Croon — Design Principles
 
 **Created:** 2026-03-13  
 **Applies to:** Expo app (iOS + Android)
@@ -11,7 +11,7 @@ Before any design decision: understand who is holding this phone and what they a
 
 The user is alone. They are about to record their voice — probably for the first time in a long time, or ever. The research is unambiguous: 89 comments on "I hate my voice." Smule's premium features exist entirely to make people feel less embarrassed about playback. This app asks users to be vulnerable.
 
-SongBuddy's design must answer that vulnerability with **calm, warmth, and focus** — not excitement, not spectacle. The app should feel like a private room, not a stage. Every pixel should say: *this is for you, no one is watching, you are safe here.*
+Croon's design must answer that vulnerability with **calm, warmth, and focus** — not excitement, not spectacle. The app should feel like a private room, not a stage. Every pixel should say: *this is for you, no one is watching, you are safe here.*
 
 ---
 

@@ -8,7 +8,7 @@ export function Waitlist() {
         className="text-2xl font-normal text-foreground mb-3"
         style={{ fontFamily: "var(--font-display)" }}
       >
-        Be first to try SongBuddy
+        Be first to try Croon
       </h2>
       <p className="font-sans text-sm text-muted-foreground mb-8">
         We are inviting a small group of early users. Drop your email.

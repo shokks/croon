@@ -7,8 +7,8 @@ export function Nav() {
     <>
       <nav className="flex items-center justify-between px-6 py-5 max-w-5xl mx-auto">
         <div className="flex items-center gap-2">
-          <Image src="/logo.svg" alt="SongBuddy" width={20} height={20} className="invert opacity-80" />
-          <span className="font-sans font-semibold text-lg tracking-tight">SongBuddy</span>
+          <Image src="/logo.svg" alt="Croon" width={20} height={20} className="invert opacity-80" />
+          <span className="font-sans font-semibold text-lg tracking-tight">Croon</span>
         </div>
         <div className="hidden sm:flex items-center gap-5 text-sm font-sans text-muted-foreground">
           <a href="#how-it-works" className="hover:text-foreground transition-colors">How it works</a>

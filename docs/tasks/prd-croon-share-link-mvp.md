@@ -1,8 +1,8 @@
-# PRD: SongBuddy Share Link (MVP)
+# PRD: Croon Share Link (MVP)
 
 **Status:** Draft  
 **Created:** 2026-03-15  
-**Spec:** [spec-songbuddy-share-link-mvp.md](../spec/spec-songbuddy-share-link-mvp.md)
+**Spec:** [spec-croon-share-link-mvp.md](../spec/spec-croon-share-link-mvp.md)
 
 ---
 
@@ -12,7 +12,7 @@ After recording, users have a raw audio file. That is not something people feel 
 
 Right now sharing is a dead end: a bare audio file with no song name, no lyrics, no visual identity. This feature turns every recording into a polished public web page — album art background, scrolling lyrics, song title, audio player — that recipients open in any browser with one tap. No download. No sign-in.
 
-This is also the primary organic growth mechanic. Every shared link carries "Made with SongBuddy" branding and a path back to the app store.
+This is also the primary organic growth mechanic. Every shared link carries "Made with Croon" branding and a path back to the app store.
 
 ---
 
@@ -58,7 +58,7 @@ This is also the primary organic growth mechanic. Every shared link carries "Mad
    - Upload the audio recording to Convex File Storage.
    - Call the `createShare` Convex mutation with the returned `storageId` plus metadata: title, artist, album art URL, plain lyrics, timed lyrics, theme, and duration.
    - Receive a `shareId` in response.
-   - Construct the public share URL: `songbuddy.app/s/{shareId}`.
+   - Construct the public share URL: `croon.app/s/{shareId}`.
 9. The app must display upload state throughout: `uploading → creating → ready(shareUrl) | error`.
 10. On `ready`, the app must open the native OS share sheet pre-filled with the share URL.
 11. The user must be able to cancel the upload at any point; the app clears local upload state on cancel.
@@ -77,18 +77,18 @@ This is also the primary organic growth mechanic. Every shared link carries "Mad
 ### Share Page (Next.js `/s/[shareId]`)
 14. The share page must be server-rendered and include the following Open Graph meta tags:
     - `og:title` — `"{title} by {artist}"` or `"{title}"` if no artist.
-    - `og:description` — `"Listen on SongBuddy"`.
+    - `og:description` — `"Listen on Croon"`.
     - `og:image` — album art URL if available; else a static themed gradient fallback image.
 15. The share page must render a full-viewport, mobile-first web player with:
     - **Background** — blurred album art if available; else theme gradient.
     - **Header** — song title and artist, centered, top safe area.
     - **Lyrics area** — active line (large, high contrast, centered) and next line (smaller, reduced opacity), synchronized to audio playback.
     - **Player controls** — play/pause button, progress bar, and timestamp.
-    - **Footer** — "Made with SongBuddy" linking to the landing page or app store.
+    - **Footer** — "Made with Croon" linking to the landing page or app store.
 16. Lyrics must advance in sync with audio playback via the `timeupdate` event:
     - If `lyricsTimed` is present: advance active line when `startMs ≤ currentTime × 1000 < endMs`.
     - If `lyricsTimed` is absent: distribute lines evenly across `durationMs`.
-17. If the share is expired or not found, the page must render a clean message with a CTA to download SongBuddy — no error crash.
+17. If the share is expired or not found, the page must render a clean message with a CTA to download Croon — no error crash.
 
 ### Preflight Validation
 18. Before uploading, the app must verify:
@@ -130,7 +130,7 @@ This is also the primary organic growth mechanic. Every shared link carries "Mad
 - **Share ready:** Immediately opens native share sheet with the URL pre-filled. No separate preview screen required for MVP.
 - **Error state:** Clear message ("Couldn't create share link") with two CTAs: "Try Again" and "Share Audio Instead".
 - **Share page:** Designed for mobile browsers first (iOS Safari, Android Chrome). Full-viewport on load, no scroll needed to see player.
-- **Expired share page:** Simple, friendly message — "This share has expired" — with a link to SongBuddy. No navigation chrome.
+- **Expired share page:** Simple, friendly message — "This share has expired" — with a link to Croon. No navigation chrome.
 
 ---
 
@@ -138,7 +138,7 @@ This is also the primary organic growth mechanic. Every shared link carries "Mad
 
 ### Repo Structure
 ```
-songbuddy/                  ← repo root
+croon/                  ← repo root
   app/                      ← Expo Router screens (existing)
   convex/                   ← shared Convex backend (new)
   web/                      ← Next.js site (new)
@@ -157,11 +157,11 @@ songbuddy/                  ← repo root
 | What | How | URL |
 |---|---|---|
 | Expo app | EAS Build → App Store / Play Store | Native binary, no URL |
-| Next.js site | Vercel — Root Directory: `web` | `songbuddy.app` |
+| Next.js site | Vercel — Root Directory: `web` | `croon.app` |
 | Convex backend | `npx convex deploy` from repo root | Convex Cloud (auto-managed) |
 
-- Vercel serves `web/` at the root domain — `/s/[shareId]` resolves as `songbuddy.app/s/abc123`.
-- Expo app references the share base URL via env var: `EXPO_PUBLIC_SHARE_BASE_URL=https://songbuddy.app`.
+- Vercel serves `web/` at the root domain — `/s/[shareId]` resolves as `croon.app/s/abc123`.
+- Expo app references the share base URL via env var: `EXPO_PUBLIC_SHARE_BASE_URL=https://croon.app`.
 - Both Expo and Next.js connect to Convex using `CONVEX_URL` in their respective `.env` files.
 
 ### Architecture
@@ -172,7 +172,7 @@ Expo app (root)
   → returns shareId
   → constructs $EXPO_PUBLIC_SHARE_BASE_URL/s/{shareId}
 
-Share URL: songbuddy.app/s/{shareId}
+Share URL: croon.app/s/{shareId}
 
 Next.js (web/) /s/[shareId]
   → getShare query (server) →  Convex database
@@ -234,6 +234,6 @@ shares: defineTable({
 ## 9. Open Questions
 
 - **Convex file size limits:** Confirm Convex File Storage limits for audio files. Typical recordings are 5–20MB for a 30–60s take — expected to be fine but worth verifying before implementation.
-- **Share URL domain:** Deployment structure is confirmed — Next.js `web/` subfolder deployed to Vercel with Root Directory set to `web`, serving `songbuddy.app`. Expo app uses `EXPO_PUBLIC_SHARE_BASE_URL=https://songbuddy.app`.
+- **Share URL domain:** Deployment structure is confirmed — Next.js `web/` subfolder deployed to Vercel with Root Directory set to `web`, serving `croon.app`. Expo app uses `EXPO_PUBLIC_SHARE_BASE_URL=https://croon.app`.
 - **OG image fallback:** Static per-theme image (fastest to ship) vs dynamic `@vercel/og` generation (more polished). Static is sufficient for MVP.
 - **Expiry copy in app:** Should the share sheet or share screen mention the 7-day expiry to set expectations? Simple one-line note is enough — no push notification needed.

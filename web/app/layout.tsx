@@ -13,7 +13,7 @@ const lora = Lora({
 });
 
 export const metadata: Metadata = {
-  title: "SongBuddy — Record yourself singing",
+  title: "Croon — Record yourself singing",
   description:
     "Find a song, follow synced lyrics on screen, record your take, and share it with friends.",
 };
