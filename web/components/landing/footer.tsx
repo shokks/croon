@@ -10,7 +10,10 @@ export function Footer() {
           <Image src="/logo.svg" alt="SongBuddy" width={16} height={16} className="invert opacity-50" />
           <span className="font-sans text-sm font-semibold text-foreground">SongBuddy</span>
         </div>
-        <span className="font-sans text-xs text-(--sb-text-disabled)">© 2026</span>
+        <div className="flex items-center gap-4">
+          <span className="font-sans text-xs text-muted-foreground">Search. Sing. Share.</span>
+          <span className="font-sans text-xs text-(--sb-text-disabled)">© 2026</span>
+        </div>
       </footer>
     </>
   );

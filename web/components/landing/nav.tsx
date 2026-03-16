@@ -10,13 +10,11 @@ export function Nav() {
           <Image src="/logo.svg" alt="SongBuddy" width={20} height={20} className="invert opacity-80" />
           <span className="font-sans font-semibold text-lg tracking-tight">SongBuddy</span>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="border-border text-muted-foreground hover:text-foreground hover:border-primary cursor-not-allowed opacity-60"
-          disabled
-        >
-          Coming to App Store
+        <div className="hidden sm:flex items-center gap-5 text-sm font-sans text-muted-foreground">
+          <a href="#how-it-works" className="hover:text-foreground transition-colors">How it works</a>
+        </div>
+        <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 font-sans font-medium">
+          Join Waitlist
         </Button>
       </nav>
       <Separator className="bg-border" />

@@ -15,7 +15,7 @@ const lora = Lora({
 export const metadata: Metadata = {
   title: "SongBuddy — Record yourself singing",
   description:
-    "Paste your lyrics, hit record, get a shareable link. No account, no setup, no strangers.",
+    "Find a song, follow synced lyrics on screen, record your take, and share it with friends.",
 };
 
 export default function RootLayout({

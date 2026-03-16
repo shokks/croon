@@ -1,37 +1,37 @@
+import { AudioLines, Search, Share2 } from "lucide-react";
+
 const STEPS = [
   {
     number: "01",
-    title: "Paste your lyrics",
-    description:
-      "Type, paste, or import lyrics from any song. Add the artist name and it finds the artwork automatically.",
+    title: "Search",
+    description: "Type the song name and artist.",
+    icon: Search,
   },
   {
     number: "02",
-    title: "Hit record",
-    description:
-      "Lyrics scroll at your pace while your mic captures the take. Background music keeps playing — no interruptions.",
+    title: "Sing",
+    description: "Lyrics scroll on screen.",
+    icon: AudioLines,
   },
   {
     number: "03",
-    title: "Share the link",
-    description:
-      "Get a link your friends can tap to hear you — album art, scrolling lyrics, and your voice. No download required.",
+    title: "Share",
+    description: "Send your recording to friends.",
+    icon: Share2,
   },
 ];
 
 export function HowItWorks() {
   return (
-    <section className="max-w-5xl mx-auto px-6 py-20">
-      <p className="font-sans text-xs uppercase tracking-widest text-(--sb-text-disabled) mb-12 text-center">
+    <section id="how-it-works" className="max-w-4xl mx-auto px-6 py-20">
+      <p className="font-sans text-xs uppercase tracking-widest text-muted-foreground mb-12 text-center">
         How it works
       </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
         {STEPS.map((step) => (
           <div key={step.number} className="flex flex-col gap-3">
-            <span className="font-sans text-xs text-primary font-semibold tracking-widest">
-              {step.number}
-            </span>
+            <step.icon className="h-6 w-6 text-primary" />
             <h3 className="font-sans text-base font-semibold text-foreground">
               {step.title}
             </h3>

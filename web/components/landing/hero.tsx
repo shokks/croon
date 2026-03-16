@@ -3,48 +3,51 @@ import { Button } from "@/components/ui/button";
 
 export function Hero() {
   return (
-    <section className="max-w-3xl mx-auto px-6 pt-24 pb-20 text-center">
-      <Badge
-        variant="outline"
-        className="mb-8 border-(--sb-accent-muted) bg-(--sb-accent-muted) text-primary text-xs tracking-wide font-sans"
-      >
-        Private beta
-      </Badge>
+    <section className="relative max-w-3xl mx-auto px-6 pt-24 pb-20 text-center overflow-hidden">
+      <div
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          background:
+            "radial-gradient(ellipse 70% 50% at 50% 40%, rgba(155,142,196,0.16) 0%, transparent 70%)",
+        }}
+      />
 
-      <h1
-        className="text-5xl sm:text-6xl leading-tight font-normal text-foreground mb-6"
-        style={{ fontFamily: "var(--font-display)" }}
-      >
-        Record yourself singing.{" "}
-        <span className="text-primary">Share the moment.</span>
-      </h1>
-
-      <p className="font-sans text-lg text-muted-foreground leading-relaxed max-w-xl mx-auto mb-10">
-        Paste your lyrics, hit record, get a link your friends can open and
-        hear. No account. No strangers. No stage.
-      </p>
-
-      <div className="flex flex-col sm:flex-row gap-3 justify-center">
-        <Button
-          size="lg"
-          className="bg-primary text-primary-foreground hover:bg-primary/90 font-sans font-medium cursor-not-allowed opacity-60"
-          disabled
-        >
-          Download for iOS
-        </Button>
-        <Button
-          size="lg"
+      <div className="animate-fade-up" style={{ animationDelay: "0ms" }}>
+        <Badge
           variant="outline"
-          className="border-border text-muted-foreground hover:text-foreground hover:border-primary/50 font-sans cursor-not-allowed opacity-60"
-          disabled
+          className="mb-8 border-(--sb-accent-muted) bg-(--sb-accent-muted) text-primary text-xs tracking-wide font-sans"
         >
-          Download for Android
-        </Button>
+          Early access
+        </Badge>
       </div>
 
-      <p className="mt-4 text-xs text-(--sb-text-disabled) font-sans">
-        Currently in private beta — join the waitlist below
+      <h1
+        className="animate-fade-up text-5xl sm:text-6xl leading-tight font-normal text-foreground mb-6"
+        style={{ fontFamily: "var(--font-display)", animationDelay: "80ms" }}
+      >
+        Record yourself{" "}
+        <span className="text-primary">singing any song.</span>
+      </h1>
+
+      <p
+        className="animate-fade-up font-sans text-lg text-muted-foreground leading-relaxed max-w-xl mx-auto mb-10"
+        style={{ animationDelay: "160ms" }}
+      >
+        Find a song, follow the lyrics on screen, and share the clip with
+        friends.
       </p>
+
+      <div
+        className="animate-fade-up flex justify-center"
+        style={{ animationDelay: "240ms" }}
+      >
+        <Button
+          size="lg"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 font-sans font-medium"
+        >
+          Join Waitlist
+        </Button>
+      </div>
     </section>
   );
 }
