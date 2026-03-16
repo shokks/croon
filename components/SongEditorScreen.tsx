@@ -339,6 +339,7 @@ export function SongEditorScreen({
     setLyrics(text);
     lyricsValueRef.current = text;
     if (isPrefilled) setIsPrefilled(false);
+    syncedLyricsRef.current = null; // user edited manually — discard lrclib synced lyrics
     scheduleSave();
   };
 

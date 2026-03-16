@@ -2,6 +2,7 @@ import { getLocales } from 'expo-localization';
 import { Platform } from 'react-native';
 import { useEffect, useRef, useState } from 'react';
 
+import { hasLyricsAvailable } from '@/lib/useLyricsLookup';
 import type { SongSearchResult } from '@/types';
 
 type ItunesTrack = {
@@ -84,7 +85,17 @@ export function useSongSearch(): UseSongSearchResult {
           appleMusicUrl: t.trackViewUrl ?? null,
         }));
 
-        setResults(mapped);
+        // Pre-filter: parallel get-cached checks, each with its own 2s fail-open timeout
+        const checks = await Promise.allSettled(
+          mapped.map((track) => hasLyricsAvailable(track, controller.signal))
+        );
+
+        setResults(
+          mapped.filter((_, i) => {
+            const check = checks[i];
+            return check.status === 'fulfilled' ? check.value : true;
+          })
+        );
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
         setError('Could not reach iTunes. Check your connection.');

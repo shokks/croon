@@ -1,50 +1,100 @@
-# Welcome to your Expo app 👋
+# Croon
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A simple, private app for recording yourself singing. Paste your lyrics, hit record, get a clip.
 
-## Get started
+## What it is
 
-1. Install dependencies
+Croon is a mobile-first singing app built for people who want to record themselves without the noise of social networks. No duets with strangers. No paywalled solo recording. No algorithmic feeds. Just you, your lyrics, and a clip you can share with people who already love you.
 
-   ```bash
-   npm install
-   ```
+The app was born from a simple observation: people were hacking together a broken solution using Snapchat, screen recording, and Spotify to record themselves singing. Croon makes that actually work.
 
-2. Start the app
+## Features
 
-   ```bash
-   npx expo start
-   ```
+- **Your own lyrics** — Paste, type, or search for songs and import lyrics automatically
+- **Auto-scrolling teleprompter** — Lyrics scroll at a speed you set (Ballad / Normal / Uptempo)
+- **One-tap recording** — Record audio with your device mic; lyrics stay visible while you sing
+- **Instant playback** — Review your take immediately with a waveform visualization
+- **Easy sharing** — Export and share to WhatsApp, iMessage, TikTok, or anywhere
+- **Personal song library** — Save songs with timing settings for quick re-access
+- **Music deep linking** — Jump to the original song on Spotify, Apple Music, or YouTube
+- **Fully local** — No account required. Your recordings stay on your device
 
-In the output, you'll find options to open the app in a
+## Design Philosophy
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+Croon is designed for the voice-insecure amateur. The person who wants to sing alone at 11pm, not perform on a stage. Every design decision flows from this:
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- **Calm, not energetic** — Dark, muted palette (lavender accent on near-black backgrounds)
+- **Private, not social** — No public profiles, no likes, no strangers
+- **Focused, not cluttered** — One job per screen. No EQ sliders, no pitch scores, no distractions
+- **Warm typography** — Humanist serif (Lora) for lyrics, geometric sans (DM Sans) for UI
 
-## Get a fresh project
+The emotional context matters: the user is about to be vulnerable. The app should feel like a private room, not a stage.
 
-When you're ready, run:
+## Tech Stack
+
+- **React Native** with **Expo** (iOS + Android)
+- **TypeScript**
+- **Expo Router** for file-based navigation
+- **Expo Audio** for recording
+- **LRCLIB** + **iTunes API** for lyrics and artwork lookup
+
+## Running locally
 
 ```bash
-npm run reset-project
+# Install dependencies
+npm install
+
+# Start the development server
+npm start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Then scan the QR code with the Expo Go app, or run on iOS/Android simulators.
 
-## Learn more
+## Project Structure
 
-To learn more about developing your project with Expo, look at the following resources:
+```
+app/                 # Expo Router screens
+  index.tsx          # Library (home screen)
+  song/
+    [id].tsx         # Song editor
+    new.tsx          # Create new song
+    search.tsx       # Search songs + auto-import lyrics
+    record/[id].tsx  # Recording screen with teleprompter
+components/          # React components
+  SongListItem.tsx
+  LyricsEditor.tsx
+  RecordingScreen.tsx
+  ...
+lib/                 # Hooks and utilities
+  useSongSearch.ts   # Search iTunes + LRCLIB
+  useLyricsLookup.ts # Fetch synced lyrics
+  ...
+constants/
+  theme.ts           # Colors, typography tokens
+docs/                # Specs, PRDs, research
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Why this exists
 
-## Join the community
+The incumbents (Smule, StarMaker) are social platforms built around licensed catalogs. They structurally cannot support custom lyrics — their entire model assumes you want their songs. Croon inverts this: you bring the lyrics, we provide the tool.
 
-Join our community of developers creating universal apps.
+This creates a different kind of product:
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- No chicken-and-egg problem — useful with one user on day one
+- No catalog licensing battles
+- No social graph to bootstrap
+- No algorithm to game
+
+The bet is that sharing with close friends removes the need for transformation effects (reverb, pitch correction). You don't need to sound like a "real singer" when your audience already accepts you.
+
+## Roadmap
+
+See `docs/tasks/roadmap.md` for the full feature roadmap and task breakdown.
+
+## Name
+
+**Croon** — to sing or hum in a soft, low voice. The name reflects the app's purpose: quiet, personal, intimate.
+
+---
+
+Built by [88mph](https://88mph.co)

@@ -10,6 +10,35 @@ type LrclibTrack = {
 
 const MANUAL_FALLBACK: LyricsLookupResult = { plainLyrics: null, syncedLyrics: null, source: 'manual' };
 
+export async function hasLyricsAvailable(
+  track: SongSearchResult,
+  signal?: AbortSignal
+): Promise<boolean> {
+  const check = async (): Promise<boolean> => {
+    try {
+      // Search by title only — artist names often differ between iTunes and lrclib
+      // (e.g. "Arijit Singh, Antara Mitra" vs "Arijit Singh"), causing false negatives
+      const params = new URLSearchParams({
+        track_name: track.title,
+      });
+      const res = await fetch(`${BASE}/search?${params}`, { signal });
+      if (!res.ok) return false;
+      const hits = (await res.json()) as LrclibTrack[];
+      if (!Array.isArray(hits) || hits.length === 0) return false;
+      return hits.some((h) => !h.instrumental && !!h.plainLyrics);
+    } catch {
+      return true; // fail open on network error or abort
+    }
+  };
+
+  // Per-request 2s timeout — fail open if lrclib is slow
+  const perRequestTimeout = new Promise<boolean>((resolve) =>
+    setTimeout(() => resolve(true), 2000)
+  );
+
+  return Promise.race([check(), perRequestTimeout]);
+}
+
 export async function lookupLyricsForTrack(
   track: SongSearchResult,
   signal?: AbortSignal

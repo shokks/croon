@@ -76,10 +76,7 @@ export function SongListItem({ song, onPress, onRecord }: SongListItemProps) {
             {song.recording ? (
               <Text style={styles.duration}>{'▶  ' + formatDuration(song.recording.durationMs)}</Text>
             ) : null}
-            <View style={styles.metaSpacer} />
-            <View style={styles.speedBadge}>
-              <Text style={styles.speedText}>{song.scrollSpeed}</Text>
-            </View>
+
           </View>
         </View>
       </Pressable>
@@ -201,9 +198,7 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 1,
   },
-  metaSpacer: {
-    flex: 1,
-  },
+
   date: {
     color: Palette.textDisabled,
     fontFamily: 'DM-Sans',
@@ -215,18 +210,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     opacity: 0.8,
   },
-  speedBadge: {
-    backgroundColor: withOpacity(Palette.border, 0.8),
-    borderRadius: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  speedText: {
-    color: Palette.textDisabled,
-    fontFamily: 'DM-Sans',
-    fontSize: 11,
-    textTransform: 'capitalize',
-  },
+
 
   // Actions row
   actionsRow: {
