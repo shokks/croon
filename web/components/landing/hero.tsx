@@ -1,6 +1,6 @@
+import { LyricsPreview } from "@/components/landing/lyrics-preview";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { LyricsPreview } from "@/components/landing/lyrics-preview";
 
 export function Hero() {
   return (
@@ -27,31 +27,34 @@ export function Hero() {
           </div>
 
           <h1
-            className="animate-fade-up text-4xl sm:text-5xl leading-tight font-normal text-foreground mb-5"
-            style={{ fontFamily: "var(--font-display)", animationDelay: "80ms" }}
+            className="animate-fade-up text-5xl sm:text-6xl lg:text-7xl leading-tight font-normal text-foreground mb-5"
+            style={{
+              fontFamily: "var(--font-display)",
+              animationDelay: "80ms",
+            }}
           >
-            Record yourself{" "}
-            <span className="text-primary">singing any song.</span>
+            Just <span className="text-primary">sing.</span>
           </h1>
 
           <p
             className="animate-fade-up font-sans text-lg text-muted-foreground leading-relaxed mb-8 max-w-sm mx-auto md:mx-0"
             style={{ animationDelay: "160ms" }}
           >
-            Find a song, follow the lyrics on screen, and share the clip with
-            friends.
+            Search any song. Lyrics on screen. Hit record.
           </p>
 
           <div
             className="animate-fade-up flex justify-center md:justify-start"
             style={{ animationDelay: "240ms" }}
           >
-            <Button
-              size="lg"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 font-sans font-medium"
-            >
-              Join Waitlist
-            </Button>
+            <a href="#waitlist">
+              <Button
+                size="lg"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 font-sans font-medium"
+              >
+                Join Waitlist
+              </Button>
+            </a>
           </div>
         </div>
 

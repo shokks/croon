@@ -9,21 +9,22 @@ const STEPS = [
   },
   {
     number: "02",
-    title: "Sing",
-    description: "Lyrics scroll on screen.",
+    title: "Croon",
+    description: "Follow synced lyrics as you sing.",
     icon: AudioLines,
   },
   {
     number: "03",
     title: "Share",
-    description: "Send your recording to friends.",
+    description: "Save it or send it to someone you love.",
     icon: Share2,
   },
 ];
 
 export function HowItWorks() {
   return (
-    <section id="how-it-works" className="max-w-4xl mx-auto px-6 py-20">
+    <section id="how-it-works" className="border-t border-border">
+      <div className="max-w-4xl mx-auto px-6 py-20">
       <p className="font-sans text-xs uppercase tracking-widest text-muted-foreground mb-12 text-center">
         How it works
       </p>
@@ -40,6 +41,7 @@ export function HowItWorks() {
             </p>
           </div>
         ))}
+      </div>
       </div>
     </section>
   );

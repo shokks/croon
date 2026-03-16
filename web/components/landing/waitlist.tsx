@@ -3,22 +3,23 @@ import { Input } from "@/components/ui/input";
 
 export function Waitlist() {
   return (
-    <section className="max-w-xl mx-auto px-6 py-20 text-center">
+    <section id="waitlist" className="border-t border-border bg-card">
+      <div className="max-w-xl mx-auto px-6 py-28 sm:py-36 text-center">
       <h2
-        className="text-2xl font-normal text-foreground mb-3"
+        className="text-3xl sm:text-4xl font-normal text-foreground mb-4"
         style={{ fontFamily: "var(--font-display)" }}
       >
-        Be first to try Croon
+        Be one of the first.
       </h2>
-      <p className="font-sans text-sm text-muted-foreground mb-8">
-        We are inviting a small group of early users. Drop your email.
+      <p className="font-sans text-base text-muted-foreground mb-10 max-w-sm mx-auto">
+        We're letting in a small group first. You should be one of them.
       </p>
 
       <form className="flex flex-col sm:flex-row gap-3">
         <Input
           type="email"
           placeholder="your@email.com"
-          className="flex-1 bg-card border-border font-sans"
+          className="flex-1 bg-background border-border font-sans"
         />
         <Button
           type="submit"
@@ -28,7 +29,8 @@ export function Waitlist() {
           Get Early Access
         </Button>
       </form>
-      <p className="mt-3 text-xs text-(--sb-text-disabled) font-sans">No spam. Early invites only.</p>
+      <p className="mt-4 text-xs text-(--sb-text-disabled) font-sans">No spam. Early invites only.</p>
+      </div>
     </section>
   );
 }
