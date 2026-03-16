@@ -1,12 +1,14 @@
 # Croon
 
-A simple, private app for recording yourself singing. Paste your lyrics, hit record, get a clip.
+A simple, private app for recording yourself singing. Search for a song, import lyrics, hit record, get a clip.
 
 ## What it is
 
 Croon is a mobile-first singing app built for people who want to record themselves without the noise of social networks. No duets with strangers. No paywalled solo recording. No algorithmic feeds. Just you, your lyrics, and a clip you can share with people who already love you.
 
-The app was born from a simple observation: people were hacking together a broken solution using Snapchat, screen recording, and Spotify to record themselves singing. Croon makes that actually work.
+Search for any song, and Croon pulls in lyrics and artwork automatically. Or paste your own lyrics if you prefer. Then hit record — lyrics scroll like a teleprompter while you sing. When you're done, you have a clip ready to share.
+
+The app was born from a simple observation: people were hacking together a broken solution using Snapchat, screen recording, and Spotify to record themselves singing. Croon makes that actually work — and removes the friction of finding and formatting lyrics.
 
 ## Features
 
@@ -78,10 +80,11 @@ docs/                # Specs, PRDs, research
 
 ## Why this exists
 
-The incumbents (Smule, StarMaker) are social platforms built around licensed catalogs. They structurally cannot support custom lyrics — their entire model assumes you want their songs. Croon inverts this: you bring the lyrics, we provide the tool.
+The incumbents (Smule, StarMaker) are social platforms built around licensed catalogs. Their entire model assumes you want their songs, and they gatekeep solo recording behind subscriptions.
 
-This creates a different kind of product:
+Croon is different:
 
+- Bring your own lyrics — or search and auto-import them
 - No chicken-and-egg problem — useful with one user on day one
 - No catalog licensing battles
 - No social graph to bootstrap
