@@ -16,10 +16,10 @@ The v0 MVP proved the shape of the product (paste → scroll → record → shar
 
 ### What v0 taught us (from a code review on 2026-11-20)
 
-| # | Finding | Where in v0 |
+| # | Finding | Where in v0 (paths at tag `v0-mvp`) |
 |---|---|---|
 | 1 | **The app never plays the music.** The research's top pain is "voice + music + lyrics in one clip on one phone". v0 records the mic only; users still start Spotify themselves, so the Snapchat-hack problem is unchanged. | `lib/useRecording.ts` |
-| 2 | **Synced lyrics share no clock with the music.** The synced-lyrics clock starts when you tap record, not when the song starts in the other app, so the highlighted line is off by however long that gap is. | `components/RecordingScreen.tsx:80` |
+| 2 | **Synced lyrics share no clock with the music.** The synced-lyrics clock starts when you tap record, not when the song starts in the other app, so the highlighted line is off by however long that gap is. | `components/RecordingScreen.tsx:90-92` |
 | 3 | **Pasted lyrics scroll far too fast.** The pace formula scrolls a 300-word song in ~33s on Normal (~48s on Ballad) against a 3–4 min song. This hits the bring-your-own-lyrics path, which is the original wedge. The track length from iTunes was fetched but never saved. | `lib/useAutoScroll.ts:6-18` |
 | 4 | **Takes can disappear.** expo-audio writes recordings to the OS cache folder and they're never moved, so the OS can delete them. On web the saved file link dies on reload. | expo-audio `AudioRecorder.swift:198`, `AudioRecorder.kt:237` |
 | 5 | **One take per song.** Re-recording overwrites the previous take, so there's no history or sense of progress. | `lib/storage.ts` `saveRecording` |
