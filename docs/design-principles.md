@@ -1,7 +1,7 @@
 # Croon — Design Principles
 
 **Created:** 2026-03-13  
-**Applies to:** Expo app (iOS + Android)
+**Applies to:** the native iOS rebuild ([spec-croon-rebuild.md](./spec/spec-croon-rebuild.md)). Sections 1–5, 7 and 8 still apply. **Section 6 (Layout & Spacing) describes v0 Expo screens** (hero card, filter chips, speed buttons) that the rebuild cuts; keep only its spacing scale. Values are in `sp`/`dp`; read them as SwiftUI points.
 
 ---
 

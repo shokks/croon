@@ -1,6 +1,6 @@
 # Croon
 
-**Status:** Idea
+**Status:** Original idea doc. The problem, ICP and risks still hold; the solution and MVP scope below are superseded by [spec-croon-rebuild.md](./spec/spec-croon-rebuild.md).
 **Created:** 2026-03-13
 
 ## Problem
